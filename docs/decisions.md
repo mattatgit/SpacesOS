@@ -16,6 +16,8 @@ The categories below deliberately distinguish product decisions already expresse
 
 **D-006: Figma preservation.** Preserve existing design work. Track implementation decisions in the repository rather than rewriting old explorations into a false single history.
 
+**D-007: Bin icon states.** The refreshed dock includes **full and empty** artwork for the bin; both represent one changing dock item.
+
 ## Proposed technical decisions — pending prototype/review
 
 **P-001:** Use a Wayland-based native shell on NixOS and retain a fallback conventional desktop.
@@ -28,9 +30,12 @@ The categories below deliberately distinguish product decisions already expresse
 
 **P-005:** Build the actual Main dock and sub-docks as the first functional vertical slice.
 
+**P-006:** Make the dock size configurable via discrete 56 / 64 / 80 logical-pixel profiles. Start native implementation with the 64px sub-dock-compatible baseline, then review 80px as the likely default on Framework hardware. Do not finalize the default or sub-dock inheritance without testing.
+
 ## Open questions
 
-- Which exact dock frames and component states from 2026 are final?
+- Which exact dock frames and component states from 2026 are final beyond the refreshed icon section?
+- Should the 80px profile become the default, and should sub-docks inherit the dock-size setting?
 - Do current Space navigation interactions require compositor-specific window control unavailable through standard Wayland protocols?
 - How should the Sidebar behave at narrow widths, on multiple displays and at non-integer scaling?
 - What are the final typography families, metrics and licensing constraints?

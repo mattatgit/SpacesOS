@@ -33,6 +33,12 @@ The **Spaces OS** board contains 21 named sections, plus miscellaneous frames. I
 
 These names and counts reflect Figma's current structure, not approved code requirements.
 
+### New dock icon update (inspected 14 November 2026)
+
+The new **Dock + app icons** section (Figma node `4299:127357`) provides updated 1024px clay icon artwork and three 1920×1280 desktop previews. The dock itself appears in **56px (384px wide), 64px (424px wide) and 80px (500px wide)** versions, with icon slots of 36–40px on the smaller docks and 48px on the 80px dock.
+
+The section contains **distinct full and empty bin assets**. These are states of one dock item, not separate entries. 64px is the sub-dock prototype baseline; 80px is the preferred default candidate pending on-device review. See [Dock implementation notes](dock-implementation-notes.md).
+
 ## Exploration board
 
 Found: transition explorations; mode explorations; sidebar/Shelf variations; multiplayer outlines and components; adding people to Spaces; onboarding; conversational installer; recent dock concepts.

@@ -13,7 +13,9 @@
 
 ## Milestone 1 — A real Spaces dock
 
-- Identify and approve canonical Figma frames for the Main dock, tooltips and Spaces/People/Services sub-docks.
+- Identify and approve canonical Figma frames for the Main dock, tooltips and Spaces/People/Services sub-docks; incorporate the refreshed icon collection (`4299:127357`).
+- Use 64px as the reference implementation baseline, implement or plan the 56/64/80px profiles, and compare 80px on the real device before fixing the default.
+- Support both full and empty bin states through one stable dock item without reflow.
 - Export approved static assets into a tracked, appropriately licensed asset structure.
 - Implement native shell surfaces, component states, hover/focus, sub-dock navigation and an application launcher.
 - Support input, keyboard, basic accessibility and logical scaling.
