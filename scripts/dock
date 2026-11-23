@@ -35,6 +35,15 @@ if [[ ${XDG_SESSION_TYPE:-} == wayland && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]
     export QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}"
 fi
 
+case "${1:-start}" in
+    start|run|reload)
+        if [[ -z ${SPACES_REDUCED_MOTION+x} && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]] &&
+            [[ $(gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true) == false ]]; then
+            export SPACES_REDUCED_MOTION=1
+        fi
+        ;;
+esac
+
 dock_height='56|6[4-9]|7[0-9]|80'
 
 case "${1:-start}" in
@@ -64,6 +73,7 @@ case "${1:-start}" in
         echo 'The old preview is still closing. Try scripts/dock start once it closes.' >&2
         exit 1 ;;
     status) wait_for_status ;;
+    space) dock_call currentSpace ;;
     test)
         export QT_PLUGIN_PATH="$SPACES_DOCK_TEST_PLUGINS"
         exec qmltestrunner -import "$SPACES_DOCK_QML_IMPORTS" -input "$repo/dock/tests" ;;
@@ -104,6 +114,6 @@ case "${1:-start}" in
         echo 'Dock screenshot was not saved. Check that the preview is visible.' >&2
         exit 1 ;;
     *)
-        echo 'Usage: scripts/dock {start|run|stop|reload|status|size|bin|spaces|capture|test}' >&2
+        echo 'Usage: scripts/dock {start|run|stop|reload|status|space|size|bin|spaces|capture|test}' >&2
         exit 2 ;;
 esac

@@ -1,14 +1,29 @@
 import QtQuick
+import QtCore
 import Quickshell
 import Quickshell.Io
 
 ShellRoot {
     settings.watchFiles: false
 
+    Settings {
+        id: preferences
+        location: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation) + "/SpacesOS/navigation.ini"
+    }
+
+    Connections {
+        target: dockState.navigation
+        function onEntered(spaceId: string): void {
+            preferences.setValue("activeSpace", spaceId);
+            preferences.sync();
+        }
+    }
+
     DockState {
         id: dockState
 
         Component.onCompleted: {
+            navigation.restore(preferences.value("activeSpace", "home"));
             setProfile(Number(Quickshell.env("SPACES_DOCK_START_PROFILE")));
             binFull = Quickshell.env("SPACES_DOCK_START_BIN") !== "empty";
         }
@@ -26,7 +41,8 @@ ShellRoot {
         title: "Spaces OS Dock"
         color: "transparent"
         implicitWidth: 928
-        implicitHeight: dockView.implicitHeight + 12
+        implicitHeight: 616
+        minimumSize: Qt.size(440, 260)
         onWindowConnected: {
             contentItem.Window.window.flags |= Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint;
         }
@@ -34,8 +50,8 @@ ShellRoot {
 
         // Leave the desktop interactive outside the dock and its two edge gestures.
         mask: Region {
-            item: dockView.currentDock
-            radius: 16
+            item: dockState.navigation.inside ? stage : dockView.currentDock
+            radius: dockState.navigation.inside ? 0 : 16
             Region { item: moveGrip }
             Region { item: dockState.spacesOpen ? dockView.returnTarget : null }
         }
@@ -44,13 +60,43 @@ ShellRoot {
             id: stage
             anchors.fill: parent
 
+            SpaceScene {
+                anchors.fill: parent
+                navigation: dockState.navigation
+                visible: navigation.inside
+                reducedMotion: Quickshell.env("SPACES_REDUCED_MOTION") === "1"
+            }
+
+            SpaceBar {
+                anchors.top: parent.top
+                width: parent.width
+                visible: dockState.navigation.inside
+                space: dockState.navigation.activeSpace
+                fontFamily: dockView.tooltipFont
+                pickerOpen: dockState.spacesOpen
+                onMoveWindow: previewWindow.startSystemMove()
+                onTogglePicker: {
+                    if (dockState.spacesOpen)
+                        dockView.closeSpaces(Qt.OtherFocusReason);
+                    else
+                        dockState.spacesOpen = true;
+                }
+                onLeaveSpace: {
+                    dockView.closeSpaces(Qt.OtherFocusReason);
+                    dockState.navigation.leave();
+                    dockView.focusSpaces(Qt.TabFocusReason);
+                }
+            }
+
             DockView {
                 id: dockView
 
                 dockState: dockState
                 tooltipFont: interTight.status === FontLoader.Ready ? interTight.name : "sans-serif"
-                anchors.fill: parent
-                anchors.bottomMargin: 12
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: dockState.navigation.inside ? 0 : 12
 
                 MouseArea {
                     id: moveGrip
@@ -80,6 +126,10 @@ ShellRoot {
             return (dockState.spacesOpen ? "Spaces" : "Main") + " dock · "
                 + dockState.profile + " px profile · "
                 + (dockState.binFull ? "Bin full" : "Bin empty");
+        }
+
+        function currentSpace(): string {
+            return dockState.navigation.activeSpace.id;
         }
 
         function profile(height: int): bool {

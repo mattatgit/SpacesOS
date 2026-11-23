@@ -13,6 +13,8 @@ Item {
     implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth)
     implicitHeight: 120 + edgeInset
 
+    function focusSpaces(reason: int): void { main.focusSpaces(reason); }
+
     function closeSpaces(reason: int): void {
         if (!dockState.spacesOpen)
             return;
