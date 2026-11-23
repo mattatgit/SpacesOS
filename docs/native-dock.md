@@ -13,8 +13,9 @@ Use `scripts/dock run` for foreground logs. After editing QML, use `scripts/dock
 
 ## Controls
 
+- Drag the empty background around the dock or a blank part of the toolbar to move the preview window.
 - Pick **56 px**, **64 px**, or **80 px** in the preview toolbar, or press **Ctrl+1**, **Ctrl+2**, or **Ctrl+3**. The main dock starts at 64 px. Drag either divider up or down to resize both docks between 64 and 80 px. The Spaces strip uses 64 px when the compact preset is selected.
-- Hover over a main dock icon to show its name, reveal the circular highlight, and shrink the artwork by 4%. Use **Tab** or **Shift+Tab** to reach a control, **Left** and **Right** to move within the dock, and **Enter** or **Space** to activate it.
+- Hover over a main dock icon to show its name and shrink the artwork by 4%. Use **Tab** or **Shift+Tab** to reach a control, **Left** and **Right** to move within the dock, and **Enter** or **Space** to activate it.
 - Activate **Spaces** to open the replacement strip. Select a thumbnail to move the active Space marker. Move the pointer to the bottom edge of the strip to lift the items, then click there to return. **Escape** and the **Main dock** button also return.
 - Activate **Bin** to toggle the two original assets in one slot. The state is shared between both views and has no effect on desktop Trash.
 - **Files** opens the home folder in the default file manager. **Create a space** shows preview feedback. Space selection, creation, and Bin contents are local demo state.

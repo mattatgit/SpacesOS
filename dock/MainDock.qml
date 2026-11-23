@@ -68,34 +68,15 @@ Item {
                 .forceActiveFocus(step > 0 ? Qt.TabFocusReason : Qt.BacktabFocusReason)
             onClicked: dock.dockState.activate(modelData.id)
 
-            background: Item {
+            background: Rectangle {
                 x: 6
                 y: button.box[1]
                 width: button.box[2]
                 height: width
-                Rectangle {
-                    objectName: button.objectName + "-hover"
-                    anchors.centerIn: parent
-                    width: Math.max(40, Math.round(44 * dock.height / 64))
-                    height: width
-                    radius: width / 2
-                    opacity: button.hovered ? 1 : 0
-                    // Keep the glass disc legible against both profile tints.
-                    gradient: Gradient {
-                        GradientStop { position: 0; color: "#73ffffff" }
-                        GradientStop { position: 0.4125; color: "#47ffffff" }
-                        GradientStop { position: 1; color: "#30000000" }
-                    }
-                    Behavior on opacity { NumberAnimation { duration: 100 } }
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: width / 2
-                    color: "transparent"
-                    border.color: "#ccffffff"
-                    visible: button.visualFocus
-                }
+                radius: width / 2
+                color: "transparent"
+                border.color: "#ccffffff"
+                visible: button.visualFocus
             }
 
             contentItem: Item {

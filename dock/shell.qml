@@ -24,6 +24,8 @@ ShellRoot {
     }
 
     Window {
+        id: previewWindow
+
         title: "Spaces OS Dock"
         visible: true
         width: 928
@@ -32,6 +34,13 @@ ShellRoot {
         minimumHeight: 212
         color: "#f6f6f5"
         onClosing: Qt.quit()
+
+        // The dock and toolbar controls receive their presses above this area.
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: previewWindow.startSystemMove()
+        }
 
         ColumnLayout {
             anchors.fill: parent
