@@ -22,9 +22,32 @@ Item {
             state.setProfile(64);
             state.binFull = true;
             state.spacesOpen = false;
-            state.selectedSpace = 0;
+            state.navigation.restore("home");
+            state.navigation.inside = true;
             view.forceActiveFocus(Qt.OtherFocusReason);
             mouseMove(view, 8, 8);
+        }
+
+        function test_leaveAndReenter() {
+            verify(state.navigation.enter("ithos"));
+            state.navigation.leave();
+            verify(!state.navigation.inside);
+            compare(state.navigation.activeSpace.access, "Shared");
+            verify(!state.navigation.enter("missing"));
+            verify(!state.navigation.inside);
+            state.activate("spaces");
+            const home = findChild(view.currentDock, "space-home");
+            mouseClick(home);
+            verify(state.navigation.inside);
+            compare(state.navigation.activeSpace.id, "home");
+            verify(findChild(home, "space-home-indicator").visible);
+        }
+
+        function test_restoreUnknownId() {
+            state.navigation.restore("ithos");
+            compare(state.navigation.activeSpace.title, "Ithos Studio");
+            state.navigation.restore("removed-space");
+            compare(state.navigation.activeSpace.id, "home");
         }
 
         function test_profiles_data() {
@@ -100,15 +123,15 @@ Item {
             keyClick(Qt.Key_Return);
             verify(state.spacesOpen);
             const subdock = findChild(view, "spacesDock");
-            const first = findChild(subdock, "space-1");
-            const second = findChild(subdock, "space-2");
+            const first = findChild(subdock, "space-home");
+            const second = findChild(subdock, "space-ithos");
             tryVerify(() => first.activeFocus);
             keyClick(Qt.Key_Right);
             verify(second.activeFocus);
             keyClick(Qt.Key_Space);
-            compare(state.selectedSpace, 1);
-            verify(findChild(second, "space-2-indicator").visible);
-            verify(!findChild(first, "space-1-indicator").visible);
+            compare(state.navigation.activeSpace.id, "ithos");
+            verify(findChild(second, "space-ithos-indicator").visible);
+            verify(!findChild(first, "space-home-indicator").visible);
             keyClick(Qt.Key_Escape);
             verify(!state.spacesOpen);
             verify(spaces.activeFocus);
@@ -119,16 +142,16 @@ Item {
             mouseClick(findChild(main, "spaces"));
             verify(state.spacesOpen);
             const subdock = findChild(view, "spacesDock");
-            compare(subdock.width, 692);
+            compare(subdock.width, 324);
             compare(subdock.height, 64);
-            mouseClick(findChild(subdock, "space-6"));
-            compare(state.selectedSpace, 5);
+            mouseClick(findChild(subdock, "space-ithos"));
+            compare(state.navigation.activeSpace.id, "ithos");
             mouseClick(findChild(subdock, "spacesBin"));
             compare(state.binFull, false);
             const returnArea = findChild(view, "spacesReturn");
-            const selected = findChild(subdock, "space-6");
-            const artwork = findChild(selected, "space-6-artwork");
-            const marker = findChild(selected, "space-6-indicator");
+            const selected = findChild(subdock, "space-ithos");
+            const artwork = findChild(selected, "space-ithos-artwork");
+            const marker = findChild(selected, "space-ithos-indicator");
             const divider = findChild(subdock, "spaces-divider-0");
             const dividerPosition = divider.mapToItem(view, 0, 0);
             mouseMove(returnArea, returnArea.width / 2, returnArea.height / 2);
@@ -165,7 +188,7 @@ Item {
             compare(dock.y + dock.height, bottom);
             mouseMove(view, start.x, start.y - 30);
             compare(state.profile, 80);
-            compare(dock.width, data.spaces ? 865 : 500);
+            compare(dock.width, data.spaces ? 405 : 500);
             mouseMove(view, start.x, start.y + 12);
             compare(state.profile, 64);
             mouseRelease(view, start.x, start.y + 12);

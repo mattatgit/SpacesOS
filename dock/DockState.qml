@@ -7,7 +7,7 @@ QtObject {
     property int profile: 64
     property bool binFull: true
     property bool spacesOpen: false
-    property int selectedSpace: 0
+    readonly property SpaceNavigation navigation: SpaceNavigation {}
 
     signal filesRequested()
     signal createSpaceRequested()

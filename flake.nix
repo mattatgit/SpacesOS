@@ -10,6 +10,7 @@
       in
       pkgs.mkShell {
         SPACES_DOCK_DEVSHELL = "1";
+        SPACES_SAMPLE_DATA = "${pkgs.gnome-backgrounds}/share";
         SPACES_DOCK_QML_IMPORTS = "${pkgs.qt6.qtdeclarative}/lib/qt-6/qml";
         SPACES_DOCK_TEST_PLUGINS = pkgs.lib.makeSearchPath "lib/qt-6/plugins" [
           pkgs.qt6.qtbase

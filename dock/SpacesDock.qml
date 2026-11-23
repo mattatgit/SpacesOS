@@ -8,19 +8,13 @@ Item {
     required property string tooltipFont
     required property bool returnHovered
     readonly property real sizeFactor: implicitHeight / DockProfiles.dragMinimum
-    readonly property var dividers: [64, 628]
+    readonly property SpaceNavigation navigation: dockState.navigation
+    readonly property real trailingDivider: 76 + 92 * navigation.spaces.length
+    readonly property var dividers: [64, trailingDivider]
     property real itemLift: returnHovered ? 4 * sizeFactor : 0
-    readonly property var spaces: [
-        { label: "Home", crop: Qt.rect(-4, -17, 87, 87), hover: Qt.rect(-12.7, -25.7, 104.4, 104.4) },
-        { label: "Private", crop: Qt.rect(-1, -7, 82, 55), hover: Qt.rect(-9, -13, 99, 66) },
-        { label: "Shared", crop: Qt.rect(0, -6, 80, 53), hover: Qt.rect(-8, -12, 97, 65) },
-        { label: "Shared", crop: Qt.rect(0, -8, 80, 54), hover: Qt.rect(-8, -13.4, 97.2, 64.8) },
-        { label: "Community", crop: Qt.rect(0, -7, 80, 53), hover: Qt.rect(-8, -12, 97, 65) },
-        { label: "Community", crop: Qt.rect(0, -8, 84, 56), hover: Qt.rect(-8.4, -13.6, 100.8, 67.2) }
-    ]
 
     objectName: "spacesDock"
-    implicitWidth: 692 * sizeFactor
+    implicitWidth: (trailingDivider + 64) * sizeFactor
     implicitHeight: Math.max(DockProfiles.dragMinimum, dockState.profile)
 
     Behavior on itemLift {
@@ -28,7 +22,7 @@ Item {
     }
 
     function focusSelection(reason: int): void {
-        thumbnails.itemAt(dockState.selectedSpace).forceActiveFocus(reason);
+        thumbnails.itemAt(navigation.activeIndex).forceActiveFocus(reason);
     }
 
     Timer {
@@ -42,8 +36,9 @@ Item {
     }
 
     function moveFocus(index: int, step: int): void {
-        const next = (index + step + 8) % 8;
-        const target = next === 0 ? createButton : next === 7 ? binButton : thumbnails.itemAt(next - 1);
+        const count = thumbnails.count + 2;
+        const next = (index + step + count) % count;
+        const target = next === 0 ? createButton : next === count - 1 ? binButton : thumbnails.itemAt(next - 1);
         target.forceActiveFocus(step > 0 ? Qt.TabFocusReason : Qt.BacktabFocusReason);
     }
 
@@ -119,7 +114,7 @@ Item {
 
         Repeater {
             id: thumbnails
-            model: dock.spaces
+            model: dock.navigation.spaces
 
             DockButton {
                 id: tile
@@ -127,21 +122,21 @@ Item {
                 required property int index
                 required property var modelData
 
-                objectName: "space-" + (index + 1)
+                objectName: "space-" + modelData.id
                 x: (70 + 92 * index) * dock.sizeFactor
                 width: 92 * dock.sizeFactor
                 height: dock.height
                 hoverEnabled: !dock.returnHovered
-                label: modelData.label
-                description: "Space " + (index + 1) + (selected ? ", selected" : "")
+                label: modelData.title
+                description: modelData.access + qsTr(" Space") + (selected ? qsTr(", active") : "")
                 tooltipFont: dock.tooltipFont
                 tooltipLayer: tooltips
                 tooltipOffset: -strip.contentX
-                selected: dock.dockState.selectedSpace === index
+                selected: dock.navigation.activeSpace.id === modelData.id
 
                 onMoveFocus: step => dock.moveFocus(index + 1, step)
                 onActiveFocusChanged: if (activeFocus) strip.reveal(tile)
-                onClicked: dock.dockState.selectedSpace = index
+                onClicked: dock.navigation.enter(modelData.id)
 
                 contentItem: Item {
                     SpaceThumbnail {
@@ -151,11 +146,10 @@ Item {
                         x: 6 * dock.sizeFactor
                         y: 12 * dock.sizeFactor - dock.itemLift
                         sizeFactor: dock.sizeFactor
-                        artwork: "assets/space-" + (tile.index + 1) + ".png"
+                        artwork: tile.modelData.thumbnail
                         restingCrop: tile.modelData.crop
                         hoverCrop: tile.modelData.hover
                         highlighted: tile.hovered || tile.visualFocus
-                        artworkOpacity: tile.index === 3 ? 0.9 : 1
                     }
 
                     Rectangle {
@@ -184,7 +178,7 @@ Item {
             id: binButton
 
             objectName: "spacesBin"
-            x: 634 * dock.sizeFactor
+            x: (dock.trailingDivider + 6) * dock.sizeFactor
             width: 52 * dock.sizeFactor
             height: dock.height
             hoverEnabled: !dock.returnHovered
@@ -194,7 +188,7 @@ Item {
             tooltipLayer: tooltips
             tooltipOffset: -strip.contentX
 
-            onMoveFocus: step => dock.moveFocus(7, step)
+            onMoveFocus: step => dock.moveFocus(thumbnails.count + 1, step)
             onActiveFocusChanged: if (activeFocus) strip.reveal(binButton)
             onClicked: dock.dockState.activate("bin")
 
