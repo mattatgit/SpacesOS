@@ -9,7 +9,7 @@ scripts/dock reload
 scripts/dock stop
 ```
 
-Use `scripts/dock run` for foreground logs. Quickshell also watches the local QML files for edits. The height and Bin state survive a soft reload.
+Use `scripts/dock run` for foreground logs. After editing QML, use `scripts/dock reload` to reopen the preview with the current height and Bin state. Relaunching the preview recreates its Wayland surface and graphics swapchain.
 
 ## Controls
 

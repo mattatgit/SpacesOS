@@ -5,25 +5,15 @@ import Quickshell
 import Quickshell.Io
 
 ShellRoot {
-    id: shell
-
-    PersistentProperties {
-        id: reviewSettings
-
-        property int profile: 64
-        property bool binFull: true
-
-        onReloaded: {
-            dockState.setProfile(profile);
-            dockState.binFull = binFull;
-        }
-    }
+    settings.watchFiles: false
 
     DockState {
         id: dockState
 
-        onProfileChanged: reviewSettings.profile = profile
-        onBinFullChanged: reviewSettings.binFull = binFull
+        Component.onCompleted: {
+            setProfile(Number(Quickshell.env("SPACES_DOCK_START_PROFILE")));
+            binFull = Quickshell.env("SPACES_DOCK_START_BIN") !== "empty";
+        }
         onFilesRequested: Quickshell.execDetached(["xdg-open", Quickshell.env("HOME")])
         onCreateSpaceRequested: createNotice.restart()
     }
@@ -151,8 +141,5 @@ ShellRoot {
             });
         }
 
-        function reload(): void {
-            Quickshell.reload(false);
-        }
     }
 }

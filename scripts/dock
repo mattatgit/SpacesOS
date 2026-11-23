@@ -26,6 +26,11 @@ wait_for_status() {
     return 1
 }
 
+start_preview() {
+    quickshell --path "$config" --no-duplicate --daemonize
+    wait_for_status || { echo 'Spaces OS Dock failed to start. Use scripts/dock run to see the log.' >&2; return 1; }
+}
+
 if [[ ${XDG_SESSION_TYPE:-} == wayland && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]; then
     export QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}"
 fi
@@ -37,13 +42,25 @@ case "${1:-start}" in
             echo 'Spaces OS Dock is already running.'
             exit 0
         fi
-        quickshell --path "$config" --no-duplicate --daemonize
-        wait_for_status || { echo 'Spaces OS Dock failed to start. Use scripts/dock run to see the log.' >&2; exit 1; } ;;
+        start_preview ;;
     run) exec quickshell --path "$config" --no-duplicate ;;
     stop) exec quickshell kill --path "$config" ;;
     reload)
-        dock_call reload
-        wait_for_status || { echo 'Spaces OS Dock did not become ready after reload.' >&2; exit 1; } ;;
+        status=$(wait_for_status)
+        profile_and_bin='· (56|64|80) px profile · Bin (full|empty)$'
+        [[ $status =~ $profile_and_bin ]] || { echo 'Could not read the dock state before reload.' >&2; exit 1; }
+        height=${BASH_REMATCH[1]}
+        bin=${BASH_REMATCH[2]}
+        quickshell kill --path "$config"
+        for attempt in {1..30}; do
+            if [[ $(quickshell list --path "$config" 2>/dev/null) != *"Instance "* ]]; then
+                SPACES_DOCK_START_PROFILE="$height" SPACES_DOCK_START_BIN="$bin" start_preview
+                exit
+            fi
+            sleep 0.1
+        done
+        echo 'The old preview is still closing. Try scripts/dock start once it closes.' >&2
+        exit 1 ;;
     status) wait_for_status ;;
     test)
         export QT_PLUGIN_PATH="$SPACES_DOCK_TEST_PLUGINS"
