@@ -33,3 +33,26 @@ var profiles = {
         divider: "divider.svg"
     }
 };
+
+var dragMinimum = 64;
+var dragMaximum = 80;
+
+function supportsHeight(height) {
+    return height === 56 || (height >= dragMinimum && height <= dragMaximum);
+}
+
+function atHeight(height) {
+    if (profiles[height])
+        return profiles[height];
+
+    const standard = profiles[dragMinimum];
+    const large = profiles[dragMaximum];
+    const progress = (height - dragMinimum) / (dragMaximum - dragMinimum);
+    const interpolate = (start, end) => start + (end - start) * progress;
+    return Object.assign({}, standard, {
+        width: interpolate(standard.width, large.width),
+        icons: standard.icons.map((box, index) =>
+            box.map((value, coordinate) => interpolate(value, large.icons[index][coordinate]))),
+        dividers: standard.dividers.map((value, index) => interpolate(value, large.dividers[index]))
+    });
+}

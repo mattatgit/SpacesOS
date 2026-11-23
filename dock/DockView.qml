@@ -5,9 +5,10 @@ Item {
 
     required property DockState dockState
     property string tooltipFont: "Inter Tight"
+    property int edgeInset: 8
     readonly property Item currentDock: dockState.spacesOpen ? spaces : main
     implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth)
-    implicitHeight: 120
+    implicitHeight: 120 + edgeInset
 
     function closeSpaces(reason: int): void {
         if (!dockState.spacesOpen)
@@ -30,6 +31,7 @@ Item {
         tooltipFont: view.tooltipFont
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: view.edgeInset
         visible: !view.dockState.spacesOpen
     }
 
@@ -38,10 +40,27 @@ Item {
 
         dockState: view.dockState
         tooltipFont: view.tooltipFont
+        returnHovered: returnArea.containsMouse
         width: Math.min(implicitWidth, parent.width - 16)
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: view.edgeInset
         visible: view.dockState.spacesOpen
+    }
+
+    MouseArea {
+        id: returnArea
+
+        objectName: "spacesReturn"
+        anchors.left: spaces.left
+        anchors.right: spaces.right
+        anchors.bottom: parent.bottom
+        height: view.edgeInset + 4 * spaces.sizeFactor
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        visible: spaces.visible
+
+        onClicked: view.closeSpaces(Qt.MouseFocusReason)
     }
 
     Connections {

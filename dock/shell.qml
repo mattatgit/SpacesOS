@@ -26,7 +26,7 @@ ShellRoot {
     Window {
         title: "Spaces OS Dock"
         visible: true
-        width: 784
+        width: 928
         height: 308
         minimumWidth: 540
         minimumHeight: 212
@@ -43,7 +43,7 @@ ShellRoot {
                 Layout.rightMargin: 12
                 Layout.preferredHeight: 48
 
-                Label { text: "Dock height" }
+                Label { text: "Dock height · " + dockState.profile + " px" }
 
                 ButtonGroup { id: profiles }
                 Repeater {
@@ -81,12 +81,6 @@ ShellRoot {
                 // Match the neutral backdrops in the two sets of Figma references.
                 color: dockState.spacesOpen ? "#000000" : "#ebebeb"
 
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: dockState.spacesOpen
-                    onClicked: dockView.closeSpaces(Qt.MouseFocusReason)
-                }
-
                 DockView {
                     id: dockView
 
@@ -95,7 +89,6 @@ ShellRoot {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 8
                 }
             }
         }

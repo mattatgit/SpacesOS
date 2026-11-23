@@ -1,10 +1,15 @@
 import QtQuick
+import "DockProfiles.js" as DockProfiles
 
 Item {
     id: dock
 
     required property DockState dockState
     required property string tooltipFont
+    required property bool returnHovered
+    readonly property real sizeFactor: implicitHeight / DockProfiles.dragMinimum
+    readonly property var dividers: [64, 628]
+    property real itemLift: returnHovered ? 4 * sizeFactor : 0
     readonly property var spaces: [
         { label: "Home", crop: Qt.rect(-4, -17, 87, 87), hover: Qt.rect(-12.7, -25.7, 104.4, 104.4) },
         { label: "Private", crop: Qt.rect(-1, -7, 82, 55), hover: Qt.rect(-9, -13, 99, 66) },
@@ -15,8 +20,12 @@ Item {
     ]
 
     objectName: "spacesDock"
-    implicitWidth: 692
-    implicitHeight: 64
+    implicitWidth: 692 * sizeFactor
+    implicitHeight: Math.max(DockProfiles.dragMinimum, dockState.profile)
+
+    Behavior on itemLift {
+        NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+    }
 
     function focusSelection(reason: int): void {
         thumbnails.itemAt(dockState.selectedSpace).forceActiveFocus(reason);
@@ -60,12 +69,15 @@ Item {
         }
 
         Repeater {
-            model: [64, 628]
+            model: dock.dividers
 
             DockDivider {
+                required property int index
                 required property int modelData
-                x: modelData - width / 2
-                y: (dock.height - height) / 2
+                objectName: "spaces-divider-" + index
+                dockState: dock.dockState
+                centerX: modelData * dock.sizeFactor
+                length: 40.5 * dock.sizeFactor
                 source: "assets/space-divider.svg"
             }
         }
@@ -74,9 +86,10 @@ Item {
             id: createButton
 
             objectName: "createSpace"
-            x: 6
-            width: 52
+            x: 6 * dock.sizeFactor
+            width: 52 * dock.sizeFactor
             height: dock.height
+            hoverEnabled: !dock.returnHovered
             label: "Create a space"
             tooltipFont: dock.tooltipFont
             tooltipLayer: tooltips
@@ -89,9 +102,11 @@ Item {
             contentItem: Item {
                 Image {
                     anchors.centerIn: parent
-                    width: 56.873
+                    anchors.verticalCenterOffset: -dock.itemLift
+                    width: 56.873 * dock.sizeFactor
                     height: width
-                    source: createButton.highlighted ? "assets/space-create-hover.svg" : "assets/space-create.svg"
+                    source: createButton.hovered || createButton.visualFocus
+                        ? "assets/space-create-hover.svg" : "assets/space-create.svg"
                 }
             }
         }
@@ -107,9 +122,10 @@ Item {
                 required property var modelData
 
                 objectName: "space-" + (index + 1)
-                x: 70 + 92 * index
-                width: 92
+                x: (70 + 92 * index) * dock.sizeFactor
+                width: 92 * dock.sizeFactor
                 height: dock.height
+                hoverEnabled: !dock.returnHovered
                 label: modelData.label
                 description: "Space " + (index + 1) + (selected ? ", selected" : "")
                 tooltipFont: dock.tooltipFont
@@ -123,8 +139,12 @@ Item {
 
                 contentItem: Item {
                     SpaceThumbnail {
-                        x: 6
-                        y: 12
+                        id: thumbnail
+
+                        objectName: tile.objectName + "-artwork"
+                        x: 6 * dock.sizeFactor
+                        y: 12 * dock.sizeFactor - dock.itemLift
+                        sizeFactor: dock.sizeFactor
                         artwork: "assets/space-" + (tile.index + 1) + ".png"
                         restingCrop: tile.modelData.crop
                         hoverCrop: tile.modelData.hover
@@ -133,11 +153,8 @@ Item {
                     }
 
                     Rectangle {
-                        x: 6
-                        y: 12
-                        width: 80
-                        height: 40
-                        radius: 8
+                        anchors.fill: thumbnail
+                        radius: 8 * dock.sizeFactor
                         color: "transparent"
                         border.color: "#eeffffff"
                         visible: tile.visualFocus
@@ -146,10 +163,10 @@ Item {
                     Rectangle {
                         objectName: tile.objectName + "-indicator"
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: 56
-                        width: 8
-                        height: 4
-                        radius: 2
+                        y: 56 * dock.sizeFactor - dock.itemLift
+                        width: 8 * dock.sizeFactor
+                        height: 4 * dock.sizeFactor
+                        radius: height / 2
                         color: "white"
                         visible: tile.selected
                     }
@@ -161,9 +178,10 @@ Item {
             id: binButton
 
             objectName: "spacesBin"
-            x: 634
-            width: 52
+            x: 634 * dock.sizeFactor
+            width: 52 * dock.sizeFactor
             height: dock.height
+            hoverEnabled: !dock.returnHovered
             label: "Bin"
             description: dock.dockState.binFull ? "Full" : "Empty"
             tooltipFont: dock.tooltipFont
@@ -176,8 +194,11 @@ Item {
 
             contentItem: Item {
                 Image {
+                    id: fullBin
+
                     anchors.centerIn: parent
-                    width: 36
+                    anchors.verticalCenterOffset: -dock.itemLift
+                    width: 36 * dock.sizeFactor
                     height: width
                     source: "assets/bin-full.png"
                     fillMode: Image.PreserveAspectFit
@@ -185,9 +206,7 @@ Item {
                     mipmap: true
                 }
                 Image {
-                    anchors.centerIn: parent
-                    width: 36
-                    height: width
+                    anchors.fill: fullBin
                     source: "assets/bin-empty.png"
                     fillMode: Image.PreserveAspectFit
                     visible: !dock.dockState.binFull

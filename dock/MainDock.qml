@@ -6,7 +6,7 @@ Item {
 
     required property DockState dockState
     required property string tooltipFont
-    readonly property var profile: DockProfiles.profiles[dockState.profile]
+    readonly property var profile: DockProfiles.atHeight(dockState.profile)
     readonly property var items: [
         { id: "bot", label: "Arlo" },
         { id: "spaces", label: "Spaces" },
@@ -41,12 +41,13 @@ Item {
     }
 
     Repeater {
-        model: dock.profile.dividers
+        model: 2
 
         DockDivider {
-            required property int modelData
-            x: modelData - width / 2
-            y: (dock.height - height) / 2
+            required property int index
+            objectName: "main-divider-" + index
+            dockState: dock.dockState
+            centerX: dock.profile.dividers[index]
             source: "assets/" + dock.profile.divider
         }
     }
@@ -70,27 +71,35 @@ Item {
             description: isBin ? (dock.dockState.binFull ? "Full" : "Empty") : ""
             tooltipFont: dock.tooltipFont
             tooltipLayer: tooltips
-            selected: dock.dockState.selectedItem === modelData.id
 
             onMoveFocus: step => buttons.itemAt((index + step + buttons.count) % buttons.count)
                 .forceActiveFocus(step > 0 ? Qt.TabFocusReason : Qt.BacktabFocusReason)
             onClicked: dock.dockState.activate(modelData.id)
 
-            background: Rectangle {
+            background: Item {
                 x: 6
                 y: button.box[1]
                 width: button.box[2]
                 height: width
-                radius: width / 2
-                opacity: button.highlighted ? 1 : 0
-                gradient: Gradient {
-                    GradientStop { position: 0.4125; color: button.selected ? "#28ffffff" : "transparent" }
-                    GradientStop { position: 1; color: button.selected ? "#96ffffff" : "#4dc1c1c1" }
+                Rectangle {
+                    objectName: button.objectName + "-hover"
+                    anchors.fill: parent
+                    radius: width / 2
+                    opacity: button.hovered ? 1 : 0
+                    gradient: Gradient {
+                        GradientStop { position: 0.4125; color: "transparent" }
+                        GradientStop { position: 1; color: "#4dc1c1c1" }
+                    }
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
                 }
-                border.width: button.visualFocus ? 1 : 0
-                border.color: "#ccffffff"
 
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: width / 2
+                    color: "transparent"
+                    border.color: "#ccffffff"
+                    visible: button.visualFocus
+                }
             }
 
             contentItem: Item {
@@ -104,7 +113,7 @@ Item {
                     fillMode: Image.PreserveAspectFit
                     source: "assets/" + (button.isBin ? "bin-full" : button.modelData.id) + ".png"
                     visible: !button.isBin || dock.dockState.binFull
-                    scale: button.highlighted ? 0.9 : 1
+                    scale: button.hovered ? 0.96 : 1
                     mipmap: true
                     Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.InOutQuad } }
                 }

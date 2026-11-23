@@ -10,8 +10,7 @@ AbstractButton {
     property Item tooltipLayer
     property real tooltipOffset: 0
     property bool selected: false
-    readonly property bool highlighted: hovered || down || visualFocus || selected
-    readonly property bool tooltipVisible: hovered && hoverDelay.elapsed || visualFocus
+    readonly property bool tooltipVisible: hovered || visualFocus
 
     signal moveFocus(int step)
 
@@ -25,21 +24,6 @@ AbstractButton {
     Keys.onRightPressed: button.moveFocus(1)
     Keys.onReturnPressed: button.click()
     Keys.onEnterPressed: button.click()
-
-    onHoveredChanged: {
-        hoverDelay.elapsed = false;
-        if (hovered)
-            hoverDelay.restart();
-        else
-            hoverDelay.stop();
-    }
-
-    Timer {
-        id: hoverDelay
-        property bool elapsed: false
-        interval: 450
-        onTriggered: elapsed = true
-    }
 
     MouseArea {
         anchors.fill: parent

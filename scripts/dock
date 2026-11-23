@@ -35,6 +35,8 @@ if [[ ${XDG_SESSION_TYPE:-} == wayland && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]
     export QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}"
 fi
 
+dock_height='56|6[4-9]|7[0-9]|80'
+
 case "${1:-start}" in
     start)
         status=$(dock_call status 2>/dev/null || true)
@@ -47,7 +49,7 @@ case "${1:-start}" in
     stop) exec quickshell kill --path "$config" ;;
     reload)
         status=$(wait_for_status)
-        profile_and_bin='· (56|64|80) px profile · Bin (full|empty)$'
+        profile_and_bin="· ($dock_height) px profile · Bin (full|empty)$"
         [[ $status =~ $profile_and_bin ]] || { echo 'Could not read the dock state before reload.' >&2; exit 1; }
         height=${BASH_REMATCH[1]}
         bin=${BASH_REMATCH[2]}
@@ -66,10 +68,12 @@ case "${1:-start}" in
         export QT_PLUGIN_PATH="$SPACES_DOCK_TEST_PLUGINS"
         exec qmltestrunner -import "$SPACES_DOCK_QML_IMPORTS" -input "$repo/dock/tests" ;;
     size)
-        case "${2:-}" in
-            56|64|80) dock_call profile "$2" ;;
-            *) echo 'Usage: scripts/dock size 56|64|80' >&2; exit 2 ;;
-        esac ;;
+        if [[ ${2:-} =~ ^($dock_height)$ ]]; then
+            dock_call profile "$2"
+        else
+            echo 'Usage: scripts/dock size 56 or an integer from 64 to 80' >&2
+            exit 2
+        fi ;;
     bin)
         case "${2:-}" in
             full) dock_call bin true ;;
