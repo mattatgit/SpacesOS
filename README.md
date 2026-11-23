@@ -4,7 +4,7 @@ Spaces OS is an experimental, design-led desktop environment and longer-term mul
 
 The project begins with a **native Linux desktop shell** based on the Spaces OS interface designs. Over time it aims to support persistent Spaces, people, applications, collaborative presence, and agent-assisted work.
 
-**Status:** foundation and design audit. No running Spaces desktop is committed here yet.
+The first native dock preview runs in Quickshell and Qt Quick. [Launch and review the dock](docs/native-dock.md).
 
 ## How we'll work
 
