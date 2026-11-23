@@ -2,9 +2,11 @@ import QtQuick
 import QtTest
 import ".."
 
-Item {
+Rectangle {
+    id: stage
     width: 928
     height: 160
+    color: "#ebebeb"
 
     DockState { id: state }
 
@@ -66,6 +68,33 @@ Item {
             tryCompare(highlight, "opacity", 0);
             tryCompare(artwork, "scale", 1);
             verify(findChild(dock, "tooltip-tools") === null);
+        }
+
+        function test_hoverPaintsCircle_data() {
+            return test_profiles_data();
+        }
+
+        function test_hoverPaintsCircle(profile) {
+            state.setProfile(profile.height);
+            const spaces = findChild(view.currentDock, "spaces");
+            const disc = findChild(spaces, "spaces-hover");
+            tryCompare(disc, "opacity", 0);
+            const rest = grabImage(stage);
+            mouseMove(spaces, spaces.width / 2, spaces.height / 2);
+            tryCompare(disc, "opacity", 1);
+            const hover = grabImage(stage);
+
+            // Sample the disc outside the illustration and one corner outside the circle.
+            const center = disc.mapToItem(stage, disc.width / 2, disc.height / 2);
+            const offset = disc.radius - 2;
+            const dpr = stage.Screen.devicePixelRatio;
+            const x = Math.floor(center.x * dpr);
+            const top = Math.floor((center.y - offset) * dpr);
+            const bottom = Math.floor((center.y + offset) * dpr);
+            const right = Math.floor((center.x + offset) * dpr);
+            verify(hover.red(x, top) - rest.red(x, top) >= 12, "Upper arc must be visible");
+            verify(rest.red(x, bottom) - hover.red(x, bottom) >= 12, "Lower arc must be visible");
+            compare(hover.pixel(right, top), rest.pixel(right, top));
         }
 
         function test_pointerAndBin() {

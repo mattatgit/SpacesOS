@@ -78,8 +78,7 @@ ShellRoot {
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                // Match the neutral backdrops in the two sets of Figma references.
-                color: dockState.spacesOpen ? "#000000" : "#ebebeb"
+                color: "#ebebeb"
 
                 DockView {
                     id: dockView

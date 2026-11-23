@@ -46,7 +46,7 @@ scripts/dock spaces open
 scripts/dock capture /tmp/spaces-dock-review/native-spaces.png
 ```
 
-Export those Figma nodes at 1× and compare beside the native PNGs at 100% zoom. On a scaled display, compare in logical coordinates or normalize both renders to the same device-pixel ratio. The preview switches between the neutral backdrops used in the isolated main-dock and sub-dock references so the tint and selection marker can be compared. The sub-dock uses the updated Bin artwork from the main dock.
+Export those Figma nodes at 1× and compare beside the native PNGs at 100% zoom. On a scaled display, compare in logical coordinates or normalize both renders to the same device-pixel ratio. Both dock views use the same neutral backdrop and share the active profile’s tint, outline and shadow. The sub-dock uses the updated Bin artwork from the main dock.
 
 `scripts/dock test` runs Qt Quick tests for profile geometry, divider dragging, pointer hover and activation, the Spaces return strip, Bin layout stability, Space selection and keyboard focus. On a headless host, use `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software scripts/dock test` for the interaction checks.
 

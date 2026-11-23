@@ -1,12 +1,11 @@
 import QtQuick
-import "DockProfiles.js" as DockProfiles
 
 Item {
     id: dock
 
     required property DockState dockState
     required property string tooltipFont
-    readonly property var profile: DockProfiles.atHeight(dockState.profile)
+    required property var profile
     readonly property var items: [
         { id: "bot", label: "Arlo" },
         { id: "spaces", label: "Spaces" },
@@ -23,13 +22,6 @@ Item {
 
     function focusSpaces(reason: int): void {
         buttons.itemAt(1).forceActiveFocus(reason);
-    }
-
-    DockSurface {
-        anchors.fill: parent
-        tint: dock.profile.tint
-        outline: dock.profile.outline
-        shadowColor: dock.profile.shadow
     }
 
     Item {
@@ -83,12 +75,16 @@ Item {
                 height: width
                 Rectangle {
                     objectName: button.objectName + "-hover"
-                    anchors.fill: parent
+                    anchors.centerIn: parent
+                    width: Math.max(40, Math.round(44 * dock.height / 64))
+                    height: width
                     radius: width / 2
                     opacity: button.hovered ? 1 : 0
+                    // Keep the glass disc legible against both profile tints.
                     gradient: Gradient {
-                        GradientStop { position: 0.4125; color: "transparent" }
-                        GradientStop { position: 1; color: "#4dc1c1c1" }
+                        GradientStop { position: 0; color: "#73ffffff" }
+                        GradientStop { position: 0.4125; color: "#47ffffff" }
+                        GradientStop { position: 1; color: "#30000000" }
                     }
                     Behavior on opacity { NumberAnimation { duration: 100 } }
                 }

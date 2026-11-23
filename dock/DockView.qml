@@ -1,4 +1,5 @@
 import QtQuick
+import "DockProfiles.js" as DockProfiles
 
 Item {
     id: view
@@ -6,6 +7,7 @@ Item {
     required property DockState dockState
     property string tooltipFont: "Inter Tight"
     property int edgeInset: 8
+    readonly property var profile: DockProfiles.atHeight(dockState.profile)
     readonly property Item currentDock: dockState.spacesOpen ? spaces : main
     implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth)
     implicitHeight: 120 + edgeInset
@@ -24,10 +26,18 @@ Item {
         onActivated: view.closeSpaces(Qt.BacktabFocusReason)
     }
 
+    DockSurface {
+        anchors.fill: view.currentDock
+        tint: view.profile.tint
+        outline: view.profile.outline
+        shadowColor: view.profile.shadow
+    }
+
     MainDock {
         id: main
 
         dockState: view.dockState
+        profile: view.profile
         tooltipFont: view.tooltipFont
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom

@@ -37,11 +37,6 @@ Item {
         target.forceActiveFocus(step > 0 ? Qt.TabFocusReason : Qt.BacktabFocusReason);
     }
 
-    DockSurface {
-        anchors.fill: parent
-        tint: "#4dffffff"
-    }
-
     Item {
         id: tooltips
         z: 1
