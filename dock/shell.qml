@@ -1,6 +1,4 @@
 import QtQuick
-import QtQuick.Controls.Basic
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 
@@ -15,7 +13,6 @@ ShellRoot {
             binFull = Quickshell.env("SPACES_DOCK_START_BIN") !== "empty";
         }
         onFilesRequested: Quickshell.execDetached(["xdg-open", Quickshell.env("HOME")])
-        onCreateSpaceRequested: createNotice.restart()
     }
 
     FontLoader {
@@ -23,92 +20,57 @@ ShellRoot {
         source: "assets/fonts/InterTight-Variable.ttf"
     }
 
-    Window {
+    FloatingWindow {
         id: previewWindow
 
         title: "Spaces OS Dock"
-        visible: true
-        width: 928
-        height: 308
-        minimumWidth: 540
-        minimumHeight: 212
-        color: "#f6f6f5"
-        onClosing: Qt.quit()
+        color: "transparent"
+        implicitWidth: 928
+        implicitHeight: dockView.implicitHeight + 12
+        onWindowConnected: {
+            contentItem.Window.window.flags |= Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint;
+        }
+        onClosed: Qt.quit()
 
-        // The dock and toolbar controls receive their presses above this area.
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-            onPressed: previewWindow.startSystemMove()
+        // Leave the desktop interactive outside the dock and its two edge gestures.
+        mask: Region {
+            item: dockView.currentDock
+            radius: 16
+            Region { item: moveGrip }
+            Region { item: dockState.spacesOpen ? dockView.returnTarget : null }
         }
 
-        ColumnLayout {
+        Item {
+            id: stage
             anchors.fill: parent
-            spacing: 0
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                Layout.rightMargin: 12
-                Layout.preferredHeight: 48
+            DockView {
+                id: dockView
 
-                Label { text: "Dock height · " + dockState.profile + " px" }
+                dockState: dockState
+                tooltipFont: interTight.status === FontLoader.Ready ? interTight.name : "sans-serif"
+                anchors.fill: parent
+                anchors.bottomMargin: 12
 
-                ButtonGroup { id: profiles }
-                Repeater {
-                    model: [56, 64, 80]
+                MouseArea {
+                    id: moveGrip
 
-                    Button {
-                        required property int modelData
-                        text: modelData + " px"
-                        checkable: true
-                        checked: dockState.profile === modelData
-                        ButtonGroup.group: profiles
-                        onClicked: dockState.setProfile(modelData)
-                    }
+                    anchors.left: dockView.currentDock.left
+                    anchors.right: dockView.currentDock.right
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: dockView.currentDock.top
+                    height: 16
+                    hoverEnabled: true
+                    cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                    onPressed: previewWindow.startSystemMove()
                 }
 
-                Item { Layout.fillWidth: true }
-
-                Label {
-                    visible: createNotice.running
-                    text: "Space creation is simulated"
-                }
-
-                Button {
-                    visible: dockState.spacesOpen
-                    text: "Main dock"
-                    onClicked: dockView.closeSpaces(visualFocus ? Qt.TabFocusReason : Qt.MouseFocusReason)
-                }
-            }
-
-            Rectangle {
-                id: stage
-
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: "#ebebeb"
-
-                DockView {
-                    id: dockView
-
-                    dockState: dockState
-                    tooltipFont: interTight.status === FontLoader.Ready ? interTight.name : "sans-serif"
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                }
+                Shortcut { sequence: "Ctrl+1"; onActivated: dockState.setProfile(56) }
+                Shortcut { sequence: "Ctrl+2"; onActivated: dockState.setProfile(64) }
+                Shortcut { sequence: "Ctrl+3"; onActivated: dockState.setProfile(80) }
             }
         }
-
-        Shortcut { sequence: "Ctrl+1"; onActivated: dockState.setProfile(56) }
-        Shortcut { sequence: "Ctrl+2"; onActivated: dockState.setProfile(64) }
-        Shortcut { sequence: "Ctrl+3"; onActivated: dockState.setProfile(80) }
-    }
-
-    Timer {
-        id: createNotice
-        interval: 2400
     }
 
     IpcHandler {

@@ -5,12 +5,13 @@ AbstractButton {
     id: button
 
     property string label
+    property string notice
     property string description
     property string tooltipFont: "Inter Tight"
     property Item tooltipLayer
     property real tooltipOffset: 0
     property bool selected: false
-    readonly property bool tooltipVisible: hovered || visualFocus
+    readonly property bool tooltipVisible: hovered || visualFocus || notice.length > 0
 
     signal moveFocus(int step)
 
@@ -52,7 +53,7 @@ AbstractButton {
             Text {
                 id: tooltipText
                 anchors.centerIn: parent
-                text: button.label
+                text: button.notice || button.label
                 color: "#171717"
                 font.family: button.tooltipFont
                 font.pixelSize: 10

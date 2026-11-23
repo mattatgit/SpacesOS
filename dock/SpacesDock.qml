@@ -31,6 +31,16 @@ Item {
         thumbnails.itemAt(dockState.selectedSpace).forceActiveFocus(reason);
     }
 
+    Timer {
+        id: createNotice
+        interval: 2400
+    }
+
+    Connections {
+        target: dock.dockState
+        function onCreateSpaceRequested(): void { createNotice.restart(); }
+    }
+
     function moveFocus(index: int, step: int): void {
         const next = (index + step + 8) % 8;
         const target = next === 0 ? createButton : next === 7 ? binButton : thumbnails.itemAt(next - 1);
@@ -86,6 +96,7 @@ Item {
             height: dock.height
             hoverEnabled: !dock.returnHovered
             label: "Create a space"
+            notice: createNotice.running ? "Space creation is simulated" : ""
             tooltipFont: dock.tooltipFont
             tooltipLayer: tooltips
             tooltipOffset: -strip.contentX

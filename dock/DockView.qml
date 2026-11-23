@@ -9,6 +9,7 @@ Item {
     property int edgeInset: 8
     readonly property var profile: DockProfiles.atHeight(dockState.profile)
     readonly property Item currentDock: dockState.spacesOpen ? spaces : main
+    readonly property alias returnTarget: returnArea
     implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth)
     implicitHeight: 120 + edgeInset
 
