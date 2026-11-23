@@ -1,12 +1,9 @@
 import QtQml
-import QtCore
 
 QtObject {
     id: navigation
 
-    readonly property url sharedWallpaper:
-        StandardPaths.locate(StandardPaths.GenericDataLocation, "SpacesOS/ithos-wallpaper.jpg").toString()
-        || StandardPaths.locate(StandardPaths.GenericDataLocation, "backgrounds/gnome/map-d.svg")
+    readonly property url sharedWallpaper: Qt.resolvedUrl("assets/ithos-wallpaper.jpg")
 
     // Stable IDs are shared by persistence, the picker, and future Shelf consumers.
     readonly property var spaces: [

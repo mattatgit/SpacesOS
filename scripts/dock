@@ -9,9 +9,6 @@ if [[ ${SPACES_DOCK_DEVSHELL:-} != 1 ]]; then
         --command "$repo/scripts/dock" "$@"
 fi
 
-# Make the sample wallpaper available on GNOME and other NixOS desktops.
-export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}${SPACES_SAMPLE_DATA:+:$SPACES_SAMPLE_DATA}"
-
 dock_call() {
     quickshell ipc --path "$config" call dock "$@"
 }

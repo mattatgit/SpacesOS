@@ -20,7 +20,7 @@ The first launch opens Home in a regular GNOME window. Choose **Spaces** in the 
 
 `SpaceNavigation.qml` owns the two sample records and exposes `activeSpace` for the next Sidebar/Shelf milestone. The dock, workspace scene and top bar consume the same record. The creation-flow frames `2515:20737` through `2515:20756` supply the inset, dissolve and expansion. Set `SPACES_REDUCED_MOTION=1` when launching for immediate switching. The launcher also reads GNOME’s animation preference.
 
-Home uses the original passage artwork already present in the project. Ithos Studio uses the Map wallpaper from the pinned GNOME backgrounds package by default. A local `$XDG_DATA_HOME/SpacesOS/ithos-wallpaper.jpg` (normally `~/.local/share/SpacesOS/ithos-wallpaper.jpg`) takes precedence for both the scene and its thumbnail. The Framework uses the river-city background from the creation flow, layer `2515:20774`.
+Home uses the passage artwork. Ithos Studio uses the river-city background from the creation flow, layer `2515:20774`. Both images ship with the preview, and each Space uses its own artwork for the scene and the picker thumbnail.
 
 ## Controls
 
