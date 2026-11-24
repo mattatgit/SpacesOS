@@ -9,6 +9,8 @@ QtObject {
     property string before: ""
     property string status: qsTr("Connecting…")
     property string notice: ""
+    property string verification: ""
+    property string failedSend: ""
     property string activity: ""
     property int percent: -1
     property bool online: false
@@ -39,7 +41,7 @@ QtObject {
             refreshing = false
             if (err) {
                 online = false
-                status = err
+                status = verification ? qsTr("Verification required") : err
                 messages = []
                 before = ""
                 avatar = ""
@@ -74,10 +76,14 @@ QtObject {
         activity = label
         request(args, (err, data) => {
             activity = ""
-            if (err) { notice = err; return }
+            if (err) {
+                if (args.op === "text" || args.op === "upload") failedSend = err
+                else notice = err
+                return
+            }
             if (args.op === "preview") previewReady(args.event, data)
             else if (args.op === "save") { notice = qsTr("Saved"); saved(args.url) }
-            else { notice = qsTr("Sent"); sent(); refresh(false) }
+            else { failedSend = ""; verification = ""; notice = qsTr("Sent"); sent(); refresh(false) }
         })
     }
 
@@ -100,6 +106,7 @@ QtObject {
                 if (msg.type === "reply" && chat.callbacks[msg.serial]) {
                     const done = chat.callbacks[msg.serial]
                     delete chat.callbacks[msg.serial]
+                    if (msg.verification) chat.verification = msg.error
                     done(msg.error, msg.data)
                 }
             }

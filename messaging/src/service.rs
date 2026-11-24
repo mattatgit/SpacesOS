@@ -184,7 +184,9 @@ pub async fn serve(profile: &account::Profile) -> Result<()> {
         };
         match reply {
             Ok(data) => emit(json!({"type":"reply","serial":serial,"data":data})),
-            Err(err) => emit(json!({"type":"reply","serial":serial,"error":reason(&err)})),
+            Err(err) => emit(
+                json!({"type":"reply","serial":serial,"error":reason(&err), "verification":matches!(err.to_string().as_str(),"verify"|"peer"|"keys"|"recovery")}),
+            ),
         }
     }
     worker.abort();

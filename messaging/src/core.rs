@@ -203,6 +203,7 @@ pub async fn history(client: &Client, id: &RoomId, from: Option<&str>) -> Result
     options.limit = 50u32.into();
     options.from = from.map(str::to_owned);
     let page = room.messages(options).await?;
+    let devices = client.devices().await.ok();
     let mut rows = Vec::new();
     for event in page.chunk.iter().rev() {
         let raw: Value = serde_json::from_str(event.raw().json().get())?;
@@ -220,11 +221,35 @@ pub async fn history(client: &Client, id: &RoomId, from: Option<&str>) -> Result
             },
             _ => continue,
         };
-        rows.push(json!({"id":raw["event_id"], "name":member.name(), "sender":raw["sender"],
-            "time":raw["origin_server_ts"], "kind":kind, "body":if kind=="locked" { "Missing key or unverified sending device" }
-                else { c["body"].as_str().unwrap_or("") },
+        let origin = event
+            .encryption_info()
+            .filter(|info| {
+                info.verification_state
+                    == matrix_sdk::deserialized_responses::VerificationState::Verified
+            })
+            .and_then(|info| info.sender_device.as_deref());
+        let device_name = origin.and_then(|id| {
+            devices
+                .as_ref()?
+                .devices
+                .iter()
+                .find(|device| device.device_id == id)
+                .and_then(|device| device.display_name.as_deref())
+        });
+        let body = match kind {
+            "locked" => "Missing key or unverified sending device",
+            "image" | "file" => c["filename"]
+                .as_str()
+                .or_else(|| c["body"].as_str())
+                .unwrap_or("Attachment"),
+            _ => c["body"].as_str().unwrap_or(""),
+        };
+        rows.push(
+            json!({"id":raw["event_id"], "name":member.name(), "sender":raw["sender"],
+            "time":raw["origin_server_ts"], "kind":kind, "body":body,
             "size":c["info"]["size"].as_u64(), "mime":c["info"]["mimetype"].as_str(),
-            "local":event.encryption_info().and_then(|i| i.sender_device.as_deref())==client.device_id()}));
+            "deviceName":device_name}),
+        );
     }
     Ok(json!({"items":rows,"previous":page.end}))
 }

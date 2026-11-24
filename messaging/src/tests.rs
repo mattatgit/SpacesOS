@@ -50,6 +50,7 @@ async fn two_devices() -> Result<()> {
     let a = open("framework").await?;
     a.matrix_auth()
         .login_username("fixture", &password)
+        .initial_device_display_name("Framework test device")
         .send()
         .await?;
     tick(&a).await?;
@@ -65,6 +66,7 @@ async fn two_devices() -> Result<()> {
     let b = open("peer").await?;
     b.matrix_auth()
         .login_username("fixture", &password)
+        .initial_device_display_name("Peer test device")
         .send()
         .await?;
     tick(&b).await?;
@@ -123,6 +125,7 @@ async fn two_devices() -> Result<()> {
             .iter()
             .find(|e| e["body"] == name)
             .expect("encrypted attachment");
+        ensure!(found["deviceName"] == "Peer test device");
         let data = download(
             &a,
             &id,

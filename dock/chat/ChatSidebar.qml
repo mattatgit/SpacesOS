@@ -25,6 +25,7 @@ Rectangle {
         attachment = url.toString()
         txn = ""
         chat.notice = ""
+        chat.failedSend = ""
     }
 
     Conversation {
@@ -73,9 +74,21 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: trustBanner
+        anchors { left: parent.left; right: parent.right; top: header.bottom; margins: 8 }
+        color: "#faf3df"; radius: 8
+        height: chat.verification ? explanation.implicitHeight + 16 : 0
+        visible: height > 0
+        LabelText {
+            id: explanation; anchors.centerIn: parent; width: parent.width - 20
+            text: chat.verification; wrapMode: Text.Wrap; font.pixelSize: 13
+        }
+    }
+
     ListView {
         id: history
-        anchors { top: header.bottom; topMargin: 12; bottom: statusRow.top; bottomMargin: 6; left: parent.left; right: parent.right }
+        anchors { top: trustBanner.bottom; topMargin: 4; bottom: failedRow.top; bottomMargin: 6; left: parent.left; right: parent.right }
         clip: true; spacing: 12
         model: chat.messages
         ScrollBar.vertical: ScrollBar {}
@@ -99,7 +112,7 @@ Rectangle {
                 RowLayout {
                     width: parent.width; spacing: 7
                     LabelText { text: row.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.maximumWidth: parent.width * 0.54 }
-                    LabelText { text: Qt.formatDateTime(new Date(row.modelData.time), "h:mm ap") + (row.modelData.local ? qsTr(" · this device") : ""); font.pixelSize: 10; color: "#6b6b6b"; Layout.fillWidth: true; elide: Text.ElideRight }
+                    LabelText { text: Qt.formatDateTime(new Date(row.modelData.time), "h:mm ap") + (row.modelData.deviceName ? " · " + row.modelData.deviceName : ""); font.pixelSize: 10; color: "#6b6b6b"; Layout.fillWidth: true; elide: Text.ElideRight }
                 }
                 LabelText { width: parent.width; wrapMode: Text.Wrap; text: row.modelData.body; color: row.modelData.kind === "locked" ? "#765a29" : "#171717" }
                 LabelText {
@@ -132,6 +145,19 @@ Rectangle {
     }
 
     RowLayout {
+        id: failedRow
+        anchors { left: parent.left; right: parent.right; bottom: statusRow.top; leftMargin: 16; rightMargin: 16 }
+        visible: !!chat.failedSend; height: visible ? implicitHeight : 0
+        LabelText {
+            Layout.fillWidth: true; color: "#75491c"; font.pixelSize: 12
+            text: qsTr("Not sent · ") + (panel.attachment ? panel.attachment.split("/").pop() : draft.text)
+                  + (chat.verification ? "" : "\n" + chat.failedSend)
+            wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight
+        }
+        Action { text: qsTr("Retry"); enabled: chat.online && !chat.activity; onClicked: panel.send() }
+    }
+
+    RowLayout {
         id: statusRow
         anchors { left: parent.left; leftMargin: 16; right: parent.right; rightMargin: 16; bottom: composer.top; bottomMargin: 4 }
         LabelText {
@@ -140,7 +166,12 @@ Rectangle {
         }
         Action { visible: chat.canRetry; text: qsTr("Retry"); onClicked: chat.refresh(false) }
         BusyIndicator { visible: !!chat.activity; running: visible; implicitWidth: 18; implicitHeight: 18 }
-        Action { visible: !!panel.openSaved; text: qsTr("Show file"); onClicked: Qt.openUrlExternally(panel.openSaved.slice(0,panel.openSaved.lastIndexOf("/") + 1)) }
+        Action {
+            visible: !!panel.openSaved
+            readonly property bool viewable: /\.(png|jpe?g|webp|pdf|txt)$/i.test(panel.openSaved)
+            text: viewable ? qsTr("Open file") : qsTr("Show folder")
+            onClicked: Qt.openUrlExternally(viewable ? panel.openSaved : panel.openSaved.slice(0,panel.openSaved.lastIndexOf("/") + 1))
+        }
     }
 
     RowLayout {
@@ -158,13 +189,13 @@ Rectangle {
             Layout.fillWidth: true; implicitHeight: 40; leftPadding: 14; font.family: panel.fontFamily; font.pixelSize: 14
             visible: !panel.attachment; readOnly: !!chat.activity; placeholderText: qsTr("Message My Devices")
             color: "#171717"; background: Rectangle { radius: 16; color: "white"; border.color: draft.activeFocus ? "#9ea39e" : "#ebebeb" }
-            onTextEdited: { panel.txn = ""; chat.notice = "" }
+            onTextEdited: { panel.txn = ""; chat.notice = ""; chat.failedSend = "" }
             onAccepted: panel.send()
         }
         Action {
             visible: !!panel.attachment; Layout.fillWidth: true; enabled: !chat.activity
             text: qsTr("Remove") + " · " + panel.attachment.split("/").pop().slice(-24)
-            onClicked: { panel.attachment = ""; panel.txn = "" }
+            onClicked: { panel.attachment = ""; panel.txn = ""; chat.failedSend = "" }
         }
         Action { text: qsTr("Send"); enabled: chat.online && !chat.activity && (!!panel.attachment || !!draft.text.trim()); onClicked: panel.send() }
     }
