@@ -6,6 +6,8 @@ The project begins with a **native Linux desktop shell** based on the Spaces OS 
 
 The native preview runs in Quickshell and Qt Quick. Open the Spaces dock to switch between Home and Ithos Studio, then leave the Space to use the dock over GNOME. [Launch and review Space navigation](docs/native-dock.md).
 
+Home’s **Chats** sidebar connects to an encrypted Matrix conversation shared with Element on a Mac. [Connect and test My Devices](docs/messaging.md).
+
 ## How we'll work
 
 - Treat the **Spaces OS** board in *Spaces OS 2026* as the main design reference.
