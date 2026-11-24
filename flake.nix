@@ -3,7 +3,20 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
-  outputs = { nixpkgs, ... }: {
+  outputs = { self, nixpkgs, ... }: {
+    devShells.x86_64-linux.messagingTest =
+      let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
+      pkgs.mkShell {
+        inputsFrom = [ self.devShells.x86_64-linux.messaging ];
+        packages = [ pkgs.matrix-synapse pkgs.python3 pkgs.gnome-keyring pkgs.dbus ];
+        SPACES_TEST_ENV = "1";
+      };
+    devShells.x86_64-linux.messaging =
+      let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
+      pkgs.mkShell {
+        SPACES_MESSAGING_ENV = "1";
+        packages = with pkgs; [ cargo rustc pkg-config cmake perl sqlite openssl libsecret xdg-utils ];
+      };
     devShells.x86_64-linux.default =
       let
         pkgs = nixpkgs.legacyPackages.x86_64-linux;

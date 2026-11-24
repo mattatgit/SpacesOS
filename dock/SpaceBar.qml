@@ -7,6 +7,8 @@ Rectangle {
     required property var space
     required property string fontFamily
     required property bool pickerOpen
+    property bool chatOpen: false
+    signal toggleChat()
     signal togglePicker()
     signal leaveSpace()
     signal moveWindow()
@@ -67,6 +69,12 @@ Rectangle {
             font.pixelSize: 14
             font.weight: Font.DemiBold
             color: "white"
+        }
+        BarButton {
+            visible: bar.space.id === "home"
+            text: qsTr("Chats")
+            checked: bar.chatOpen
+            onClicked: bar.toggleChat()
         }
     }
 

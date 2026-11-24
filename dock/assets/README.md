@@ -16,5 +16,6 @@ The images in this directory are individual Figma exports approved for the publi
 | `space-1.png` through `space-6.png` | Thumbnail source layers in Space variants under `2515:8503` |
 | `ithos-wallpaper.jpg` | River-city background from `2515:20774` in *Create a Space to open Doc*, used for the Ithos Studio scene and thumbnail |
 | `space-create*.svg`, `space-divider.svg` | Create control states and divider in `2515:8503` |
+| `chat-back.svg`, `chat-attach.svg` | Back arrow `2515:66586` and attachment glyph `2515:69406` in the personal chat sidebar |
 
 Inter Tight is distributed under the [SIL Open Font License](fonts/OFL.txt).

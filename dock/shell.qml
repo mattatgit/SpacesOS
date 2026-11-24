@@ -2,6 +2,7 @@ import QtQuick
 import QtCore
 import Quickshell
 import Quickshell.Io
+import "chat"
 
 ShellRoot {
     settings.watchFiles: false
@@ -59,6 +60,9 @@ ShellRoot {
         Item {
             id: stage
             anchors.fill: parent
+            property bool chatOpen: false
+            readonly property bool personalHome: dockState.navigation.inside && dockState.navigation.activeSpace.id === "home"
+            onPersonalHomeChanged: if (!personalHome) chatOpen = false
 
             SpaceScene {
                 anchors.fill: parent
@@ -68,12 +72,15 @@ ShellRoot {
             }
 
             SpaceBar {
+                id: bar
                 anchors.top: parent.top
                 width: parent.width
                 visible: dockState.navigation.inside
                 space: dockState.navigation.activeSpace
                 fontFamily: dockView.tooltipFont
                 pickerOpen: dockState.spacesOpen
+                chatOpen: stage.chatOpen
+                onToggleChat: stage.chatOpen = !stage.chatOpen
                 onMoveWindow: previewWindow.startSystemMove()
                 onTogglePicker: {
                     if (dockState.spacesOpen)
@@ -86,6 +93,14 @@ ShellRoot {
                     dockState.navigation.leave();
                     dockView.focusSpaces(Qt.TabFocusReason);
                 }
+            }
+
+            Loader {
+                active: stage.chatOpen && stage.personalHome
+                anchors { left: parent.left; leftMargin: 8; top: bar.bottom; topMargin: 8 }
+                width: Math.min(408, parent.width - 16)
+                height: Math.min(612, Math.max(0, parent.height - dockView.edgeInset - dockView.currentDock.height - y - 12))
+                sourceComponent: ChatSidebar { fontFamily: dockView.tooltipFont; onClosed: stage.chatOpen = false }
             }
 
             DockView {
