@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="sidebar">
+<path id="Vector" d="M2 2H14C14.5523 2 15 2.38376 15 2.85714V13.1429C15 13.6162 14.5523 14 14 14H2C1.44772 14 1 13.6162 1 13.1429V2.85714C1 2.38376 1.44772 2 2 2Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<path id="Vector_2" d="M7 2L7 14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<rect id="Rectangle 9" x="3" y="4" width="2" height="1.5" fill="white"/>
+<rect id="Rectangle 10" x="3" y="7" width="2" height="1.5" fill="white"/>
+<rect id="Rectangle 11" x="3" y="10" width="2" height="1.5" fill="white"/>
+</g>
+</svg>

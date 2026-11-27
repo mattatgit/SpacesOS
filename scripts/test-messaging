@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$repo"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/SpacesOS/messaging/test-build}"
+if [[ ${SPACES_TEST_ENV:-} != 1 ]]; then
+    exec nix --extra-experimental-features 'nix-command flakes' develop "path:$repo#messagingTest" --command "$0" "$@"
+fi
+cargo build --locked --manifest-path messaging/Cargo.toml
+export PYTHONDONTWRITEBYTECODE=1
+exec dbus-run-session -- python3 "$repo/messaging/tests/homeserver.py"

@@ -4,7 +4,11 @@ Spaces OS is an experimental, design-led desktop environment and longer-term mul
 
 The project begins with a **native Linux desktop shell** based on the Spaces OS interface designs. Over time it aims to support persistent Spaces, people, applications, collaborative presence, and agent-assisted work.
 
-**Status:** foundation and design audit. No running Spaces desktop is committed here yet.
+The native preview runs in Quickshell and Qt Quick. Open the Spaces dock to switch between Home and Ithos Studio, then leave the Space to use the dock over GNOME. [Launch and review Space navigation](docs/native-dock.md).
+
+Install **Spaces** in the GNOME launcher with `scripts/install-spaces`. Use `scripts/spaces-session nested` to try the independent desktop. [Desktop shell, session and review guide](docs/desktop-shell.md).
+
+Home’s right-hand Sidebar connects to an encrypted Matrix conversation shared with Element on a Mac. [Connect and test My Devices](docs/messaging.md).
 
 ## How we'll work
 

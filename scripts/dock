@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+config="$repo/dock/shell.qml"
+
+if [[ ${SPACES_DOCK_DEVSHELL:-} != 1 ]]; then
+    exec nix --extra-experimental-features 'nix-command flakes' develop "path:$repo" \
+        --command "$repo/scripts/dock" "$@"
+fi
+
+dock_call() {
+    quickshell ipc --path "$config" call dock "$@"
+}
+
+wait_for_status() {
+    local status attempt
+    for attempt in {1..30}; do
+        if status=$(dock_call status 2>/dev/null) &&
+            [[ $status == "Main dock · "* || $status == "Spaces dock · "* ]]; then
+            printf '%s\n' "$status"
+            return 0
+        fi
+        sleep 0.1
+    done
+    return 1
+}
+
+start_preview() {
+    quickshell --path "$config" --no-duplicate --daemonize
+    wait_for_status || { echo 'Spaces OS Dock failed to start. Use scripts/dock run to see the log.' >&2; return 1; }
+}
+
+if [[ ${XDG_SESSION_TYPE:-} == wayland && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]; then
+    export QSG_RHI_BACKEND="${QSG_RHI_BACKEND:-vulkan}"
+fi
+
+case "${1:-start}" in
+    start|run|reload|launch|fullscreen)
+        if [[ -z ${SPACES_REDUCED_MOTION+x} && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]] &&
+            [[ $(gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true) == false ]]; then
+            export SPACES_REDUCED_MOTION=1
+        fi
+        ;;
+esac
+
+dock_height='56|6[4-9]|7[0-9]|80'
+
+case "${1:-start}" in
+    launch|fullscreen)
+        # Concurrent launcher activations must attach to the same instance.
+        exec 9>"$XDG_RUNTIME_DIR/spaces-preview-launch.lock"
+        flock 9
+        if ! dock_call status >/dev/null 2>&1; then
+            start_preview 9>&-
+        fi
+        if [[ $1 == fullscreen ]]; then dock_call activate true; else dock_call activate false; fi ;;
+    start)
+        status=$(dock_call status 2>/dev/null || true)
+        if [[ $status == "Main dock · "* || $status == "Spaces dock · "* ]]; then
+            echo 'Spaces OS Dock is already running.'
+            exit 0
+        fi
+        start_preview ;;
+    run) exec quickshell --path "$config" --no-duplicate ;;
+    stop) exec quickshell kill --path "$config" ;;
+    reload)
+        status=$(wait_for_status)
+        profile_and_bin="· ($dock_height) px profile · Bin (full|empty)$"
+        [[ $status =~ $profile_and_bin ]] || { echo 'Could not read the dock state before reload.' >&2; exit 1; }
+        height=${BASH_REMATCH[1]}
+        bin=${BASH_REMATCH[2]}
+        quickshell kill --path "$config"
+        for attempt in {1..30}; do
+            if [[ $(quickshell list --path "$config" 2>/dev/null) != *"Instance "* ]]; then
+                SPACES_DOCK_START_PROFILE="$height" SPACES_DOCK_START_BIN="$bin" start_preview
+                exit
+            fi
+            sleep 0.1
+        done
+        echo 'The old preview is still closing. Try scripts/dock start once it closes.' >&2
+        exit 1 ;;
+    status) wait_for_status ;;
+    space) dock_call currentSpace ;;
+    test)
+        export QT_PLUGIN_PATH="$SPACES_DOCK_TEST_PLUGINS"
+        exec qmltestrunner -import "$SPACES_DOCK_QML_IMPORTS" -input "$repo/dock/tests" ;;
+    size)
+        if [[ ${2:-} =~ ^($dock_height)$ ]]; then
+            dock_call profile "$2"
+        else
+            echo 'Usage: scripts/dock size 56 or an integer from 64 to 80' >&2
+            exit 2
+        fi ;;
+    bin)
+        case "${2:-}" in
+            full) dock_call bin true ;;
+            empty) dock_call bin false ;;
+            *) echo 'Usage: scripts/dock bin full|empty' >&2; exit 2 ;;
+        esac ;;
+    spaces)
+        case "${2:-}" in
+            open) dock_call spaces true ;;
+            close) dock_call spaces false ;;
+            *) echo 'Usage: scripts/dock spaces open|close' >&2; exit 2 ;;
+        esac ;;
+    capture)
+        [[ $# == 2 ]] || { echo 'Usage: scripts/dock capture /path/to/dock.png' >&2; exit 2; }
+        output=$(realpath -m -- "$2")
+        scratch=$(mktemp --tmpdir="$(dirname -- "$output")" .dock-XXXXXXXX.png)
+        trap 'rm -f -- "$scratch"' EXIT
+        [[ $(dock_call capture "$scratch") == true ]] || { echo 'Dock capture could not be started.' >&2; exit 1; }
+        for attempt in {1..30}; do
+            # The renderer saves asynchronously. Wait for the PNG end-of-file chunk.
+            if [[ $(tail -c 12 -- "$scratch" | od -An -tx1 | tr -d ' \n') == 0000000049454e44ae426082 ]]; then
+                mv -fT -- "$scratch" "$output"
+                printf '%s\n' "$output"
+                exit 0
+            fi
+            sleep 0.1
+        done
+        echo 'Dock screenshot was not saved. Check that the preview is visible.' >&2
+        exit 1 ;;
+    *)
+        echo 'Usage: scripts/dock {launch|fullscreen|start|run|stop|reload|status|space|size|bin|spaces|capture|test}' >&2
+        exit 2 ;;
+esac

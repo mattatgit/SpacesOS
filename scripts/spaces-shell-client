@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -eu
+if [[ ${SPACES_NESTED:-} == 1 ]]; then
+    # Only the newly created private bus should activate clients on this display.
+    dbus-update-activation-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+fi
+exec quickshell --path "${SPACES_SESSION_QML:?Start with spaces-session}"
