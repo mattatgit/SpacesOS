@@ -136,7 +136,7 @@ Item {
 
                 onMoveFocus: step => dock.moveFocus(index + 1, step)
                 onActiveFocusChanged: if (activeFocus) strip.reveal(tile)
-                onClicked: dock.navigation.enter(modelData.id)
+                onClicked: dock.navigation.select(modelData.id)
 
                 contentItem: Item {
                     SpaceThumbnail {

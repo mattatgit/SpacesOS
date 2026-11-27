@@ -6,6 +6,7 @@ import Quickshell.Wayland
 ShellRoot {
     settings.watchFiles: false
     DesktopState { id: desktop; independent: true }
+    WorkspaceBridge { desktop: desktop }
     ApplicationMenu { id: appMenu }
 
     PanelWindow {
@@ -32,23 +33,22 @@ ShellRoot {
             anchors.fill: parent
             desktop: desktop; applicationMenu: appMenu
             onLeaveSpace: desktop.leave()
-            onExitSession: Qt.quit()
+            onExitSession: desktop.loginSession ? Quickshell.execDetached(["spaces-control", "logout"]) : Qt.quit()
             onLaunchNotes: Quickshell.execDetached(["gjs", Quickshell.shellPath("../session/notes.js")])
             onLaunchViewer: Quickshell.execDetached(["gtk3-icon-browser"])
         }
     }
     PanelWindow {
         screen: wallpaper.screen
-        anchors.bottom: true
-        implicitWidth: Math.min(wallpaper.width, 560)
+        anchors { bottom: true; left: true; right: true }
         implicitHeight: dock.implicitHeight
-        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: dock.currentDock.height + dock.edgeInset
         WlrLayershell.namespace: "spaces-dock"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         color: "transparent"
         mask: Region {
             item: dock.currentDock
-            Region { item: desktop.spacesOpen ? dock.returnTarget : null }
+            Region { item: desktop.subDockOpen ? dock.returnTarget : null }
         }
         DockView { id: dock; anchors.fill: parent; dockState: desktop; tooltipFont: desktop.fontFamily }
     }

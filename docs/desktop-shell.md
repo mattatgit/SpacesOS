@@ -41,7 +41,7 @@ nix --extra-experimental-features 'nix-command flakes' build .#session
 
 The preview is a single GNOME-managed window. The independent host has four Wayland surfaces on the compositor’s default output. The wallpaper occupies the background layer, the bar reserves 48 logical pixels, the bottom dock has an input mask matching its controls, and the right Sidebar takes keyboard focus on demand. A private session bus, runtime directory, Wayland socket, and temporary XDG configuration, data and cache keep nested launches separate. The nested Files button opens its temporary data directory. Accounts in the enclosing desktop stay in that session.
 
-labwc’s session command owns the foreground shell. Closing either ends the nested desktop. The launcher cleans its temporary directory on exit. Window management remains the compositor’s responsibility. Switching Spaces changes shell context and wallpaper; application windows currently stay on the same desktop.
+labwc’s session command owns the foreground shell. Closing either ends the nested desktop. The launcher cleans its temporary directory on exit. Window management remains the compositor’s responsibility. The daily-use build maps Home and Ithos Studio to real compositor workspaces.
 
 ## Sidebar and visual comparison
 
@@ -66,19 +66,9 @@ For a 1:1 comparison, inspect the reference and the running shell at 100% logica
 
 GTK’s `GMenuModel` supplies the live model; `GActionGroup` supplies the actions and their enabled state. The adapter renders the opted-in application’s top-level menus and ordinary, parameterless application actions. Unsupported clients remain usable. Qt applications can instead export the Canonical D-BusMenu layout/events interface through a suitable platform integration. KDE’s protocol supplies per-window discovery of that endpoint. Supporting that format, nested submenus, parameterized actions and window-scoped GTK actions would extend this first adapter. [GTK menu exporter](https://docs.gtk.org/gio/menu-exporter.html), [KDE AppMenu protocol](https://github.com/KDE/plasma-wayland-protocols/blob/master/src/protocols/appmenu.xml), [KWin scripting API](https://develop.kde.org/docs/plasma/kwin/api/), [labwc](https://labwc.github.io/).
 
-## Optional NixOS login entry
+## NixOS login
 
-For the installation owner, add a pinned input for this reviewed revision to the machine’s NixOS flake and include `spacesos.nixosModules.session` in the host’s `modules`. Keep the existing display manager and GNOME configuration. A typical input and module reference are shown below.
-
-```nix
-inputs.spacesos.url = "github:mattatgit/SpacesOS/feature/desktop-shell";
-# In the host’s nixosSystem modules list:
-# modules = [ ./configuration.nix spacesos.nixosModules.session ];
-```
-
-Review and commit the host’s lockfile before activation. First build the usual host configuration with `nixos-rebuild build`. After the installation owner approves a boot test, use the host’s normal `nixos-rebuild boot` procedure. Keep the prior generation. At GDM, choose **Spaces OS** from the session selector. End the session using the Spaces menu or the emergency shortcut, then select **GNOME** for recovery. A previous generation remains available from the boot menu. Removing the module and rebuilding removes the extra login entry.
-
-The module appends one Wayland session package. The login entry runs labwc as the primary compositor with the session’s normal logind environment; nested-only temporary directories apply only to the desktop experiment. Login, locking, suspend/resume, portals, keyring provisioning on a physical login and multi-monitor recovery remain acceptance work. The module was evaluated alongside GNOME and its package was built and tested nested. With GNOME enabled, the evaluated session order was `gnome, spaces` and the effective automatic login session was `gnome`. Host activation requires separate approval.
+The daily-use build extends this milestone with a selectable GDM session, an installed app launcher, per-Space windows and login services. [Installation, updates, keyboard controls and GNOME recovery](daily-session.md).
 
 ## Validation and review decisions
 

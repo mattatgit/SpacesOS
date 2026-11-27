@@ -7,8 +7,14 @@ QtObject {
     property int profile: 64
     property bool binFull: true
     property bool spacesOpen: false
+    property bool toolsOpen: false
+    property var applications: []
+    readonly property bool subDockOpen: spacesOpen || toolsOpen
+    onSpacesOpenChanged: if (spacesOpen) toolsOpen = false
+    onToolsOpenChanged: if (toolsOpen) spacesOpen = false
     readonly property SpaceNavigation navigation: SpaceNavigation {}
 
+    signal applicationRequested(string desktopId)
     signal filesRequested()
     signal createSpaceRequested()
 
@@ -24,6 +30,9 @@ QtObject {
         switch (id) {
         case "spaces":
             state.spacesOpen = true;
+            break;
+        case "tools":
+            state.toolsOpen = state.applications.length > 0;
             break;
         case "bin":
             state.binFull = !state.binFull;

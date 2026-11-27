@@ -24,6 +24,12 @@ QtObject {
     property bool inside: true
 
     signal entered(string spaceId)
+    property bool compositorManaged: false
+    signal selectionRequested(string spaceId)
+    function select(spaceId: string): void {
+        if (compositorManaged) selectionRequested(spaceId);
+        else enter(spaceId);
+    }
 
     function restore(spaceId: string): void {
         const index = spaces.findIndex(space => space.id === spaceId);

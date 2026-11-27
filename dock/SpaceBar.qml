@@ -69,6 +69,23 @@ Rectangle {
                     visible: bar.desktop.independent; height: visible ? implicitHeight : 0
                     text: qsTr("Open Icon Browser"); onTriggered: bar.launchViewer()
                 }
+                Menu {
+                    id: controlsMenu
+                    title: qsTr("System")
+                    enabled: bar.desktop.loginSession
+                    Instantiator {
+                        model: [["Network & Wi-Fi", "wifi"], ["Sound", "audio"], ["Displays", "displays"],
+                                ["Battery", "battery"], ["Lock Screen", "lock"], ["Suspend", "suspend"],
+                                ["Restart…", "reboot"], ["Shut Down…", "poweroff"]]
+                        MenuItem {
+                            required property var modelData
+                            text: modelData[0]
+                            onTriggered: Quickshell.execDetached(["spaces-control", modelData[1]])
+                        }
+                        onObjectAdded: (index, item) => controlsMenu.insertItem(index, item)
+                        onObjectRemoved: (index, item) => controlsMenu.removeItem(item)
+                    }
+                }
                 MenuItem { text: bar.desktop.independent ? qsTr("End Spaces Session") : qsTr("Quit Spaces"); onTriggered: bar.exitSession() }
             }
         }
@@ -89,7 +106,7 @@ Rectangle {
                     MenuItem {
                         required property string modelData
                         text: bar.desktop.navigation.spaces.find(space => space.id === modelData).title
-                        onTriggered: bar.desktop.navigation.enter(modelData)
+                        onTriggered: bar.desktop.navigation.select(modelData)
                     }
                     onObjectAdded: (index, item) => recents.insertItem(index, item)
                     onObjectRemoved: (index, item) => recents.removeItem(item)
@@ -164,7 +181,7 @@ Rectangle {
             }
             Text {
                 x: 24; anchors.verticalCenter: parent.verticalCenter
-                text: bar.desktop.personal ? qsTr("Private") : qsTr("Shared")
+                text: bar.desktop.independent && !bar.desktop.workspaceConfirmed ? "…" : bar.desktop.personal ? qsTr("Private") : qsTr("Shared")
                 font.family: bar.desktop.fontFamily; font.pixelSize: 14; color: "white"
             }
         }

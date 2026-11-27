@@ -21,6 +21,8 @@ Item {
         function init() {
             state.setProfile(64);
             state.binFull = true;
+            state.applications = [];
+            state.toolsOpen = false;
             state.spacesOpen = false;
             state.navigation.restore("home");
             state.navigation.inside = true;
@@ -41,6 +43,26 @@ Item {
             verify(state.navigation.inside);
             compare(state.navigation.activeSpace.id, "home");
             verify(findChild(home, "space-home-indicator").visible);
+        }
+
+        SignalSpy { id: launches; target: state; signalName: "applicationRequested" }
+
+        function test_toolsKeyboardAndReturn() {
+            state.applications = [{id: "sample", name: "Sample", icon: Qt.resolvedUrl("../assets/tools.png")}];
+            const tools = findChild(view.currentDock, "tools");
+            tools.forceActiveFocus(Qt.TabFocusReason);
+            keyClick(Qt.Key_Return);
+            verify(state.toolsOpen);
+            const app = findChild(view.currentDock, "launch-sample");
+            tryVerify(() => app.activeFocus);
+            launches.clear();
+            keyClick(Qt.Key_Return);
+            compare(launches.signalArguments[0][0], "sample");
+            keyClick(Qt.Key_Escape);
+            verify(tools.activeFocus);
+            mouseClick(tools);
+            mouseClick(view.returnTarget);
+            verify(!state.subDockOpen);
         }
 
         function test_restoreUnknownId() {

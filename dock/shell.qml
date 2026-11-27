@@ -26,7 +26,7 @@ ShellRoot {
             item: dockState.navigation.inside ? stage : dockView.currentDock
             radius: dockState.navigation.inside ? 0 : 16
             Region { item: moveGrip }
-            Region { item: dockState.spacesOpen ? dockView.returnTarget : null }
+            Region { item: dockState.subDockOpen ? dockView.returnTarget : null }
         }
 
         Item {

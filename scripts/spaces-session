@@ -8,6 +8,8 @@ if [[ ${SPACES_DOCK_DEVSHELL:-} != 1 ]]; then
 fi
 # labwc passes -S to a command parser. Keep the path in the environment, outside the command string.
 export SPACES_SESSION_QML="$repo/dock/session.qml"
+export SPACES_SESSION_MODE="$mode"
+export NIXOS_OZONE_WL=1
 export XDG_CURRENT_DESKTOP=Spaces XDG_SESSION_DESKTOP=Spaces XDG_SESSION_TYPE=wayland QT_QPA_PLATFORM=wayland
 export GDK_BACKEND=wayland
 unset DISPLAY SWAYSOCK I3SOCK XDG_ACTIVATION_TOKEN DESKTOP_STARTUP_ID
