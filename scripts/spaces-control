@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Power and authentication actions belong exclusively to a real Spaces login.
+[[ ${SPACES_SESSION_MODE:-} == login && ${XDG_CURRENT_DESKTOP:-} == Spaces ]] || exit 1
+case "${1:-}" in
+    lock) exec swaylock -f -c 242725 ;;
+    suspend) swaylock -f -c 242725 && exec systemctl suspend ;;
+    volume-up) exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+    volume-down) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+    mute) exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    brighter) exec brightnessctl -c backlight set +5% ;;
+    dimmer) exec brightnessctl -c backlight set 5%- ;;
+    wifi) exec kgx -- nmtui ;;
+    audio) exec pavucontrol ;;
+    displays) exec wdisplays ;;
+    battery) exec zenity --info --title="Battery" --text="$(upower --show-info /org/freedesktop/UPower/devices/DisplayDevice | awk '/state:|percentage:|time to/{print}')" ;;
+    logout|reboot|poweroff)
+        case "$1" in logout) label='Log Out';; reboot) label='Restart';; poweroff) label='Shut Down';; esac
+        zenity --question --title="$label" --text="Save your work before continuing." --ok-label="$label" || exit 0
+        if [[ $1 == logout ]]; then exec labwc --exit; fi
+        exec systemctl "$1" ;;
+    *) exit 2 ;;
+esac

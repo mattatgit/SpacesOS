@@ -6,6 +6,8 @@ The project begins with a **native Linux desktop shell** based on the Spaces OS 
 
 The native preview runs in Quickshell and Qt Quick. Open the Spaces dock to switch between Home and Ithos Studio, then leave the Space to use the dock over GNOME. [Launch and review Space navigation](docs/native-dock.md).
 
+Choose **Spaces OS** in the GDM session selector after installing the Spaces NixOS module. [Daily-use guide, installation and GNOME recovery](docs/daily-session.md).
+
 Install **Spaces** in the GNOME launcher with `scripts/install-spaces`. Use `scripts/spaces-session nested` to try the independent desktop. [Desktop shell, session and review guide](docs/desktop-shell.md).
 
 Home’s right-hand Sidebar connects to an encrypted Matrix conversation shared with Element on a Mac. [Connect and test My Devices](docs/messaging.md).

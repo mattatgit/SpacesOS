@@ -1,8 +1,23 @@
 <?xml version="1.0"?>
 <labwc_config>
+  <desktops>
+    <popupTime>0</popupTime>
+    <names><name>Home</name><name>Ithos Studio</name><name>Overview</name></names>
+  </desktops>
   <keyboard>
     <default />
     <keybind key="W-S-Escape"><action name="Exit" /></keybind>
+    <keybind key="W-Return"><action name="Execute" command="kgx" /></keybind>
+    <keybind key="W-l"><action name="Execute" command="spaces-control lock" /></keybind>
+    <keybind key="W-1"><action name="GoToDesktop" to="1" /></keybind>
+    <keybind key="W-2"><action name="GoToDesktop" to="2" /></keybind>
+    <keybind key="W-S-1"><action name="SendToDesktop" to="1" follow="no" /></keybind>
+    <keybind key="W-S-2"><action name="SendToDesktop" to="2" follow="no" /></keybind>
+    <keybind key="XF86AudioRaiseVolume"><action name="Execute" command="spaces-control volume-up" /></keybind>
+    <keybind key="XF86AudioLowerVolume"><action name="Execute" command="spaces-control volume-down" /></keybind>
+    <keybind key="XF86AudioMute"><action name="Execute" command="spaces-control mute" /></keybind>
+    <keybind key="XF86MonBrightnessUp"><action name="Execute" command="spaces-control brighter" /></keybind>
+    <keybind key="XF86MonBrightnessDown"><action name="Execute" command="spaces-control dimmer" /></keybind>
   </keyboard>
   <mouse><default /></mouse>
 </labwc_config>

@@ -1,7 +1,32 @@
 #!/usr/bin/env bash
 set -eu
-if [[ ${SPACES_NESTED:-} == 1 ]]; then
-    # Only the newly created private bus should activate clients on this display.
+if [[ ${SPACES_SESSION_MODE:-} == nested ]]; then
     dbus-update-activation-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+    exec quickshell --path "${SPACES_SESSION_QML:?Start with spaces-session}"
 fi
-exec quickshell --path "${SPACES_SESSION_QML:?Start with spaces-session}"
+# GDM supplies the PAM-unlocked keyring and the user's bus. Activated services
+# (portals and graphical apps) must receive this login's display.
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
+children=()
+cleanup() { if (( ${#children[@]} )); then kill "${children[@]}" 2>/dev/null || true; fi; }
+trap cleanup EXIT
+outputs=${XDG_CONFIG_HOME:-$HOME/.config}/SpacesOS/outputs
+if [[ -r $outputs ]]; then
+    kanshi -c "$outputs" & children+=("$!")
+fi
+mako & children+=("$!")
+"${SPACES_POLKIT_AGENT:?Missing authentication agent}" & children+=("$!")
+quickshell --path "${SPACES_SESSION_QML:?Start with spaces-session}" & shell_pid=$!
+children+=("$shell_pid")
+while true; do
+    swayidle -w timeout 600 'spaces-control lock' lock 'spaces-control lock' before-sleep 'spaces-control lock' &
+    idle_pid=$!
+    children+=("$idle_pid")
+    wait -n -p exited "$idle_pid" "$shell_pid" || true
+    [[ ${exited:-} == "$idle_pid" ]] || break
+    unset 'children[-1]'
+    # Protect the session before restarting a failed lock watcher. A missing
+    # lock protocol or broken locker cannot leave an unprotected login running.
+    spaces-control lock || exit 1
+    sleep 1
+done

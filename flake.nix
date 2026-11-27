@@ -7,8 +7,22 @@
     packages.x86_64-linux.session = import ./session/package.nix {
       pkgs = nixpkgs.legacyPackages.x86_64-linux; src = self;
     };
-    nixosModules.session = { pkgs, lib, ... }: {
-      services.displayManager.sessionPackages = lib.mkAfter [ (import ./session/package.nix { inherit pkgs; src = self; }) ];
+    nixosModules.session = { pkgs, lib, ... }:
+    let session = import ./session/package.nix { inherit pkgs; src = self; }; in {
+      services.displayManager.sessionPackages = lib.mkAfter [ session ];
+      environment.systemPackages = [ session ];
+      security.pam.services.swaylock = {};
+      security.polkit.enable = true;
+      services.gnome.gnome-keyring.enable = true;
+      services.udev.packages = [ pkgs.brightnessctl ];
+      xdg.portal.enable = true;
+      xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+      xdg.portal.wlr.enable = true;
+      xdg.portal.config.spaces = {
+        default = [ "gtk" ];
+        "org.freedesktop.impl.portal.ScreenCast" = [ "wlr" ];
+        "org.freedesktop.impl.portal.Screenshot" = [ "wlr" ];
+      };
     };
     devShells.x86_64-linux.messagingTest =
       let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
@@ -29,6 +43,7 @@
       in
       pkgs.mkShell {
         SPACES_DOCK_DEVSHELL = "1";
+        SPACES_POLKIT_AGENT = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
         GI_TYPELIB_PATH = import ./session/typelib-path.nix pkgs;
         SPACES_DOCK_QML_IMPORTS = "${pkgs.qt6.qtdeclarative}/lib/qt-6/qml";
         SPACES_DOCK_TEST_PLUGINS = pkgs.lib.makeSearchPath "lib/qt-6/plugins" [
@@ -48,6 +63,8 @@
           util-linux
           labwc
           nautilus
+          gnome-console kanshi mako swayidle swaylock brightnessctl pavucontrol wdisplays
+          networkmanager upower wireplumber wl-clipboard zenity
           ninja
           pkg-config
           qt6.qtdeclarative

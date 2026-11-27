@@ -18,6 +18,10 @@ case ${1:-} in
     setup|build) ;;
     *) echo 'Usage: scripts/chat {setup|build|serve}' >&2; exit 2 ;;
 esac
+# The installed login already provides Secret Service and the URL opener.
+if [[ $1 == serve && -x "$bin" && ${SPACES_SESSION_MODE:-} == login ]] && command -v secret-tool >/dev/null; then
+    exec "$bin" serve
+fi
 if [[ ${SPACES_MESSAGING_ENV:-} != 1 ]]; then
     exec nix --extra-experimental-features 'nix-command flakes' develop "path:$repo#messaging" --command "$repo/scripts/chat" "$@"
 fi

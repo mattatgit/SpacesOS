@@ -24,6 +24,8 @@ Item {
         buttons.itemAt(1).forceActiveFocus(reason);
     }
 
+    function focusTools(reason: int): void { buttons.itemAt(3).forceActiveFocus(reason); }
+
     Item {
         id: tooltips
         z: 1

@@ -8,14 +8,19 @@ Item {
     property string tooltipFont: "Inter Tight"
     property int edgeInset: 8
     readonly property var profile: DockProfiles.atHeight(dockState.profile)
-    readonly property Item currentDock: dockState.spacesOpen ? spaces : main
+    readonly property Item currentDock: dockState.spacesOpen ? spaces : dockState.toolsOpen ? tools : main
     readonly property alias returnTarget: returnArea
-    implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth)
+    implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth, tools.implicitWidth)
     implicitHeight: 120 + edgeInset
 
     function focusSpaces(reason: int): void { main.focusSpaces(reason); }
 
     function closeSpaces(reason: int): void {
+        if (dockState.toolsOpen) {
+            dockState.toolsOpen = false;
+            main.focusTools(reason);
+            return;
+        }
         if (!dockState.spacesOpen)
             return;
 
@@ -25,7 +30,7 @@ Item {
 
     Shortcut {
         sequence: "Escape"
-        enabled: view.dockState.spacesOpen
+        enabled: view.dockState.subDockOpen
         onActivated: view.closeSpaces(Qt.BacktabFocusReason)
     }
 
@@ -45,7 +50,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: view.edgeInset
-        visible: !view.dockState.spacesOpen
+        visible: !view.dockState.subDockOpen
     }
 
     SpacesDock {
@@ -61,17 +66,30 @@ Item {
         visible: view.dockState.spacesOpen
     }
 
+    ToolsDock {
+        id: tools
+        dockState: view.dockState
+        tooltipFont: view.tooltipFont
+        returnHovered: returnArea.containsMouse
+        width: Math.min(implicitWidth, parent.width - 16)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: view.edgeInset
+        visible: view.dockState.toolsOpen
+        onVisibleChanged: if (visible) focusFirst()
+    }
+
     MouseArea {
         id: returnArea
 
         objectName: "spacesReturn"
-        anchors.left: spaces.left
-        anchors.right: spaces.right
+        anchors.left: view.currentDock.left
+        anchors.right: view.currentDock.right
         anchors.bottom: parent.bottom
         height: view.edgeInset + 4 * spaces.sizeFactor
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        visible: spaces.visible
+        visible: view.dockState.subDockOpen
 
         onClicked: view.closeSpaces(Qt.MouseFocusReason)
     }
