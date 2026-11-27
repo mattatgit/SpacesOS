@@ -4,6 +4,12 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
   outputs = { self, nixpkgs, ... }: {
+    packages.x86_64-linux.session = import ./session/package.nix {
+      pkgs = nixpkgs.legacyPackages.x86_64-linux; src = self;
+    };
+    nixosModules.session = { pkgs, lib, ... }: {
+      services.displayManager.sessionPackages = lib.mkAfter [ (import ./session/package.nix { inherit pkgs; src = self; }) ];
+    };
     devShells.x86_64-linux.messagingTest =
       let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
       pkgs.mkShell {
@@ -23,6 +29,7 @@
       in
       pkgs.mkShell {
         SPACES_DOCK_DEVSHELL = "1";
+        GI_TYPELIB_PATH = import ./session/typelib-path.nix pkgs;
         SPACES_DOCK_QML_IMPORTS = "${pkgs.qt6.qtdeclarative}/lib/qt-6/qml";
         SPACES_DOCK_TEST_PLUGINS = pkgs.lib.makeSearchPath "lib/qt-6/plugins" [
           pkgs.qt6.qtbase
@@ -34,7 +41,13 @@
           cmake
           git
           grim
+          gjs
+          glib
+          gtk3
+          dbus
+          util-linux
           labwc
+          nautilus
           ninja
           pkg-config
           qt6.qtdeclarative

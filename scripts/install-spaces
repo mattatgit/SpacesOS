@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+mkdir -p "$apps"
+# Escape field codes and the desktop-entry and Exec string layers.
+launcher=$(printf '%s' "$repo/scripts" | sed -e 's/\\/\\\\\\\\/g' -e 's/["$`]/\\\\&/g' -e 's/%/%%/g')
+entry=$(mktemp "$apps/.spaces-XXXXXXXX")
+trap 'rm -f -- "$entry"' EXIT
+cat > "$entry" <<ENTRY
+[Desktop Entry]
+Type=Application
+Name=Spaces
+Comment=Open the Spaces desktop
+Exec="$launcher/dock" launch
+Icon=$repo/dock/assets/spaces.png
+StartupWMClass=org.spacesos.Spaces
+Categories=Utility;
+Terminal=false
+Actions=Fullscreen;Independent;
+
+[Desktop Action Fullscreen]
+Name=Open Fullscreen
+Exec="$launcher/dock" fullscreen
+
+[Desktop Action Independent]
+Name=Open Independent Desktop
+Exec="$launcher/spaces-session" nested
+ENTRY
+chmod 644 "$entry"
+mv -fT "$entry" "$apps/org.spacesos.Spaces.desktop"
+echo "Installed Spaces in $apps"

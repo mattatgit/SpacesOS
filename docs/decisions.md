@@ -16,6 +16,8 @@ The categories below deliberately distinguish product decisions already expresse
 
 **D-006: Figma preservation.** Preserve existing design work. Track implementation decisions in the repository rather than rewriting old explorations into a false single history.
 
+**D-007. Global application menus.** Compatible applications export their menus and actions for the focused window. The Spaces system bar presents them. The first implementation uses a GTK client on labwc. [Desktop shell investigation](desktop-shell.md).
+
 ## Proposed technical decisions — pending prototype/review
 
 **P-001:** Use a Wayland-based native shell on NixOS and retain a fallback conventional desktop.

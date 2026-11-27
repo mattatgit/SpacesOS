@@ -1,45 +1,17 @@
+//@ pragma AppId org.spacesos.Spaces
 import QtQuick
-import QtCore
 import Quickshell
 import Quickshell.Io
-import "chat"
 
 ShellRoot {
     settings.watchFiles: false
 
-    Settings {
-        id: preferences
-        location: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation) + "/SpacesOS/navigation.ini"
-    }
-
-    Connections {
-        target: dockState.navigation
-        function onEntered(spaceId: string): void {
-            preferences.setValue("activeSpace", spaceId);
-            preferences.sync();
-        }
-    }
-
-    DockState {
-        id: dockState
-
-        Component.onCompleted: {
-            navigation.restore(preferences.value("activeSpace", "home"));
-            setProfile(Number(Quickshell.env("SPACES_DOCK_START_PROFILE")));
-            binFull = Quickshell.env("SPACES_DOCK_START_BIN") !== "empty";
-        }
-        onFilesRequested: Quickshell.execDetached(["xdg-open", Quickshell.env("HOME")])
-    }
-
-    FontLoader {
-        id: interTight
-        source: "assets/fonts/InterTight-Variable.ttf"
-    }
+    DesktopState { id: dockState }
 
     FloatingWindow {
         id: previewWindow
 
-        title: "Spaces OS Dock"
+        title: "Spaces"
         color: "transparent"
         implicitWidth: 928
         implicitHeight: 616
@@ -60,15 +32,11 @@ ShellRoot {
         Item {
             id: stage
             anchors.fill: parent
-            property bool chatOpen: false
-            readonly property bool personalHome: dockState.navigation.inside && dockState.navigation.activeSpace.id === "home"
-            onPersonalHomeChanged: if (!personalHome) chatOpen = false
-
             SpaceScene {
                 anchors.fill: parent
                 navigation: dockState.navigation
                 visible: navigation.inside
-                reducedMotion: Quickshell.env("SPACES_REDUCED_MOTION") === "1"
+                reducedMotion: dockState.reducedMotion
             }
 
             SpaceBar {
@@ -76,38 +44,42 @@ ShellRoot {
                 anchors.top: parent.top
                 width: parent.width
                 visible: dockState.navigation.inside
-                space: dockState.navigation.activeSpace
-                fontFamily: dockView.tooltipFont
-                pickerOpen: dockState.spacesOpen
-                chatOpen: stage.chatOpen
-                onToggleChat: stage.chatOpen = !stage.chatOpen
-                onMoveWindow: previewWindow.startSystemMove()
-                onTogglePicker: {
-                    if (dockState.spacesOpen)
-                        dockView.closeSpaces(Qt.OtherFocusReason);
-                    else
-                        dockState.spacesOpen = true;
-                }
+                desktop: dockState
+                fullscreen: previewWindow.fullscreen
+                onToggleFullscreen: previewWindow.fullscreen = !previewWindow.fullscreen
+                onMoveWindow: if (!previewWindow.fullscreen) previewWindow.startSystemMove()
                 onLeaveSpace: {
-                    dockView.closeSpaces(Qt.OtherFocusReason);
-                    dockState.navigation.leave();
+                    previewWindow.fullscreen = false;
+                    dockState.leave();
                     dockView.focusSpaces(Qt.TabFocusReason);
                 }
+                onExitSession: Qt.quit()
             }
 
-            Loader {
-                active: stage.chatOpen && stage.personalHome
-                anchors { left: parent.left; leftMargin: 8; top: bar.bottom; topMargin: 8 }
-                width: Math.min(408, parent.width - 16)
-                height: Math.min(612, Math.max(0, parent.height - dockView.edgeInset - dockView.currentDock.height - y - 12))
-                sourceComponent: ChatSidebar { fontFamily: dockView.tooltipFont; onClosed: stage.chatOpen = false }
+            SpaceSidebar {
+                anchors { right: parent.right; rightMargin: 16; top: bar.bottom; topMargin: 16 }
+                width: Math.min(408, parent.width - 32)
+                readonly property bool overlapsDock: width + 16 > (parent.width - dockView.currentDock.width) / 2
+                height: Math.min(612, parent.height - y - 16 - (overlapsDock ? dockView.currentDock.height + 8 : 0))
+                desktop: dockState
+                z: 1
             }
+
+            Shortcut {
+                sequence: "F11"
+                context: Qt.ApplicationShortcut
+                onActivated: {
+                    dockState.navigation.inside = true;
+                    previewWindow.fullscreen = !previewWindow.fullscreen;
+                }
+            }
+            Shortcut { context: Qt.ApplicationShortcut; sequence: "Ctrl+Q"; onActivated: Qt.quit() }
 
             DockView {
                 id: dockView
 
                 dockState: dockState
-                tooltipFont: interTight.status === FontLoader.Ready ? interTight.name : "sans-serif"
+                tooltipFont: dockState.fontFamily
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -136,6 +108,15 @@ ShellRoot {
 
     IpcHandler {
         target: "dock"
+
+        function activate(full: bool): void {
+            dockState.navigation.inside = true;
+            previewWindow.minimized = false;
+            if (full) previewWindow.fullscreen = true;
+            previewWindow.contentItem.Window.window.requestActivate();
+        }
+
+        function isFullscreen(): bool { return previewWindow.fullscreen; }
 
         function status(): string {
             return (dockState.spacesOpen ? "Spaces" : "Main") + " dock · "

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 Rectangle {
     id: scene
@@ -60,6 +61,27 @@ Rectangle {
                 opacity: index === scene.shownIndex ? scene.blend : 1
                 visible: index === scene.shownIndex || (scene.blend < 1 && index === scene.previousIndex)
             }
+        }
+    }
+
+    // Both hosts own their wallpaper. Sample only the strip behind the reserved
+    // menu bar; blur across unrelated application surfaces belongs to the compositor.
+    Item {
+        width: parent.width
+        height: 48
+        clip: true
+        ShaderEffectSource {
+            id: barSample
+            width: parent.width; height: 96
+            sourceItem: canvas
+            sourceRect: Qt.rect(0, 0, width, height)
+            visible: false
+        }
+        MultiEffect {
+            width: barSample.width; height: barSample.height
+            source: barSample
+            autoPaddingEnabled: false
+            blurEnabled: true; blurMax: 48; blur: 1
         }
     }
 

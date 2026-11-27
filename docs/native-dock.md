@@ -14,9 +14,9 @@ Use `scripts/dock run` for foreground logs. After editing QML, use `scripts/dock
 
 ## Entering and leaving a Space
 
-The first launch opens Home in a regular GNOME window. Choose **Spaces** in the main dock or top bar, then click **Ithos Studio**. The background changes, the top bar shows the active Space and its access type, and the marker moves under its thumbnail. Choose **Home** to switch back. The bottom edge of the picker or **Escape** returns to the main dock in the current Space.
+The first launch opens Home in a regular GNOME window. Choose **Spaces** in the main dock or the current Space name in the menu bar, then click **Ithos Studio**. The background changes, the top bar shows the active Space and its access type, and the marker moves under its thumbnail. Choose **Home** to switch back. The bottom edge of the picker or **Escape** returns to the main dock in the current Space.
 
-**Leave Space** takes you back to the draggable, transparent dock over GNOME. Open its Spaces picker and choose a thumbnail to re-enter. The selected Space ID is saved immediately to `$XDG_CONFIG_HOME/SpacesOS/navigation.ini` (normally `~/.config/SpacesOS/navigation.ini`). Restarting opens the saved Space. A missing or unrecognized ID selects Home. `scripts/dock space` prints its stable ID.
+The Spaces mark’s **Leave Space** command takes you back to the draggable, transparent dock over GNOME. Open its Spaces picker and choose a thumbnail to re-enter. The selected Space ID is saved immediately to `$XDG_CONFIG_HOME/SpacesOS/navigation.ini` (normally `~/.config/SpacesOS/navigation.ini`). Restarting opens the saved Space. A missing or unrecognized ID selects Home. `scripts/dock space` prints its stable ID.
 
 `SpaceNavigation.qml` owns the two sample records and exposes `activeSpace` for the next Sidebar/Shelf milestone. The dock, workspace scene and top bar consume the same record. The creation-flow frames `2515:20737` through `2515:20756` supply the inset, dissolve and expansion. Set `SPACES_REDUCED_MOTION=1` when launching for immediate switching. The launcher also reads GNOME’s animation preference.
 

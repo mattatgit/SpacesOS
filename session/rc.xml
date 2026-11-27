@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <keyboard>
+    <default />
+    <keybind key="W-S-Escape"><action name="Exit" /></keybind>
+  </keyboard>
+  <mouse><default /></mouse>
+</labwc_config>

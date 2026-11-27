@@ -6,7 +6,17 @@ import QtQuick.Layouts
 Rectangle {
     id: panel
     required property string fontFamily
+    required property bool interactive
     signal closed()
+    onInteractiveChanged: {
+        if (interactive) {
+            if (!chat.service.running) chat.service.running = true
+        } else {
+            picker.close()
+            saveDialog.close()
+            draft.focus = false
+        }
+    }
     radius: 16
     color: "#e6fafafa"
     property string attachment: ""

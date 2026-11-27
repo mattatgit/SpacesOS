@@ -8,7 +8,11 @@ bin="$cache/$version/spaces-messaging"
 case ${1:-} in
     serve)
         if [[ ! -x "$bin" ]]; then
-            echo '{"type":"unavailable","message":"Close Chats and run scripts/chat setup in a terminal."}'
+            if [[ ${SPACES_NESTED:-} == 1 ]]; then
+                echo '{"type":"unavailable","message":"My Devices is not set up in this temporary session."}'
+            else
+                echo '{"type":"unavailable","message":"Run scripts/chat setup in a terminal, then reopen the Sidebar."}'
+            fi
             exit 1
         fi ;;
     setup|build) ;;
