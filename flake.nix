@@ -70,6 +70,7 @@
           qt6.qtdeclarative
           qt6.qttools
           quickshell
+          python3 (import ./arlo/model.nix { inherit pkgs; })
           wayland-scanner
           wayland-utils
           xdg-utils

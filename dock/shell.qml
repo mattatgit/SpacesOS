@@ -77,6 +77,7 @@ ShellRoot {
 
             DockView {
                 id: dockView
+                availableHeight: stage.height - (dockState.navigation.inside ? 48 : 16)
 
                 dockState: dockState
                 tooltipFont: dockState.fontFamily
@@ -87,6 +88,7 @@ ShellRoot {
 
                 MouseArea {
                     id: moveGrip
+                    visible: !dockState.arloOpen
 
                     anchors.left: dockView.currentDock.left
                     anchors.right: dockView.currentDock.right

@@ -11,8 +11,6 @@
     <keybind key="W-l"><action name="Execute" command="spaces-control lock" /></keybind>
     <keybind key="W-1"><action name="GoToDesktop" to="1" /></keybind>
     <keybind key="W-2"><action name="GoToDesktop" to="2" /></keybind>
-    <keybind key="W-S-1"><action name="SendToDesktop" to="1" follow="no" /></keybind>
-    <keybind key="W-S-2"><action name="SendToDesktop" to="2" follow="no" /></keybind>
     <keybind key="XF86AudioRaiseVolume"><action name="Execute" command="spaces-control volume-up" /></keybind>
     <keybind key="XF86AudioLowerVolume"><action name="Execute" command="spaces-control volume-down" /></keybind>
     <keybind key="XF86AudioMute"><action name="Execute" command="spaces-control mute" /></keybind>
