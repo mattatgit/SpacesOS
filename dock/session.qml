@@ -48,9 +48,10 @@ ShellRoot {
         color: "transparent"
         mask: Region {
             item: dock.currentDock
+            Region { item: dock.activityTarget }
             Region { item: desktop.subDockOpen ? dock.returnTarget : null }
         }
-        DockView { id: dock; anchors.fill: parent; dockState: desktop; tooltipFont: desktop.fontFamily }
+        DockView { id: dock; anchors.fill: parent; availableHeight: wallpaper.height - 48; dockState: desktop; tooltipFont: desktop.fontFamily }
     }
     PanelWindow {
         screen: wallpaper.screen

@@ -8,10 +8,12 @@ Item {
     property string tooltipFont: "Inter Tight"
     property int edgeInset: 8
     readonly property var profile: DockProfiles.atHeight(dockState.profile)
-    readonly property Item currentDock: dockState.spacesOpen ? spaces : dockState.toolsOpen ? tools : main
+    readonly property Item currentDock: dockState.arloOpen ? commandInput : dockState.spacesOpen ? spaces : dockState.toolsOpen ? tools : main
     readonly property alias returnTarget: returnArea
     implicitWidth: Math.max(main.implicitWidth, spaces.implicitWidth, tools.implicitWidth)
-    implicitHeight: 120 + edgeInset
+    readonly property Item activityTarget: activity.visible ? activity : null
+    property real availableHeight: 480
+    implicitHeight: Math.max(120 + edgeInset, activity.visible ? currentDock.height + edgeInset + activity.height + 18 : 0)
 
     function focusSpaces(reason: int): void { main.focusSpaces(reason); }
 
@@ -41,6 +43,34 @@ Item {
         shadowColor: view.profile.shadow
     }
 
+    ArloInput {
+        id: commandInput
+        controller: view.dockState.arlo
+        profile: view.dockState.profile
+        family: view.tooltipFont
+        width: Math.min(implicitWidth, view.width - 16)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: view.edgeInset
+        visible: view.dockState.arloOpen
+    }
+    ArloActivity {
+        id: activity
+        controller: view.dockState.arlo
+        family: view.tooltipFont
+        maximumListHeight: Math.max(42, Math.min(202, view.availableHeight - view.currentDock.height - 142))
+        visible: !!controller?.personal && (view.dockState.arloOpen || (hasActivity && !view.dockState.subDockOpen))
+        width: expanded ? Math.min(commandInput.width, 420) : 148
+        anchors.horizontalCenter: view.currentDock.horizontalCenter
+        anchors.bottom: view.currentDock.top
+        anchors.bottomMargin: 8
+    }
+    Shortcut {
+        sequence: "Escape"
+        enabled: view.dockState.arloOpen
+        onActivated: view.dockState.arlo.opened = false
+    }
+
     MainDock {
         id: main
 
@@ -50,7 +80,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: view.edgeInset
-        visible: !view.dockState.subDockOpen
+        visible: !view.dockState.subDockOpen && !view.dockState.arloOpen
     }
 
     SpacesDock {
@@ -98,8 +128,10 @@ Item {
         target: view.dockState
 
         function onSpacesOpenChanged(): void {
-            if (view.dockState.spacesOpen)
+            if (view.dockState.spacesOpen) {
+                if (view.dockState.arlo) view.dockState.arlo.opened = false;
                 spaces.focusSelection(Qt.OtherFocusReason);
+            }
         }
     }
 }

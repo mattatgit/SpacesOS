@@ -1,0 +1,2 @@
+root ::= "{" ws "\"op\"" ws ":" ws ( "\"" ("read" | "undo" | "unsupported") "\"" | "\"set\"" ws "," ws "\"height\"" ws ":" ws "-"? [0-9]{1,6} ("." [0-9]{1,3})? ) ws "}"
+ws ::= [ \t]{0,2}

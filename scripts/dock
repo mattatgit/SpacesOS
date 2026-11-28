@@ -68,12 +68,11 @@ case "${1:-start}" in
         status=$(wait_for_status)
         profile_and_bin="· ($dock_height) px profile · Bin (full|empty)$"
         [[ $status =~ $profile_and_bin ]] || { echo 'Could not read the dock state before reload.' >&2; exit 1; }
-        height=${BASH_REMATCH[1]}
         bin=${BASH_REMATCH[2]}
         quickshell kill --path "$config"
         for attempt in {1..30}; do
             if [[ $(quickshell list --path "$config" 2>/dev/null) != *"Instance "* ]]; then
-                SPACES_DOCK_START_PROFILE="$height" SPACES_DOCK_START_BIN="$bin" start_preview
+                SPACES_DOCK_START_BIN="$bin" start_preview
                 exit
             fi
             sleep 0.1
@@ -87,7 +86,13 @@ case "${1:-start}" in
         exec qmltestrunner -import "$SPACES_DOCK_QML_IMPORTS" -input "$repo/dock/tests" ;;
     size)
         if [[ ${2:-} =~ ^($dock_height)$ ]]; then
-            dock_call profile "$2"
+            [[ $(dock_call profile "$2") == true ]] || exit 1
+            for attempt in {1..30}; do
+                if [[ $(dock_call status) == *"· $2 px profile ·"* ]]; then echo true; exit 0; fi
+                sleep 0.1
+            done
+            echo 'The settings service did not confirm the requested height.' >&2
+            exit 1
         else
             echo 'Usage: scripts/dock size 56 or an integer from 64 to 80' >&2
             exit 2

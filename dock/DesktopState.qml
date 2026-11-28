@@ -42,6 +42,10 @@ DockState {
         location: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation) + "/SpacesOS/navigation.ini"
     }
 
+    arlo: ArloController {
+        personal: desktop.personal
+        onHeightConfirmed: height => desktop.profile = height
+    }
     onPersonalChanged: sidebarOpen = false
     onFilesRequested: {
         const folder = independent && Quickshell.env("SPACES_NESTED") === "1"
@@ -65,7 +69,6 @@ DockState {
         navigation.compositorManaged = independent;
         initialized = true;
         remember(navigation.activeSpace.id);
-        setProfile(Number(Quickshell.env("SPACES_DOCK_START_PROFILE")));
         binFull = Quickshell.env("SPACES_DOCK_START_BIN") !== "empty";
     }
     function leave(): void {

@@ -61,6 +61,7 @@ Item {
             width: box[2] + 12
             height: dock.height
             objectName: modelData.id
+            enabled: modelData.id !== "bot" || !dock.dockState.arlo || dock.dockState.arlo.personal
             label: modelData.label
             description: isBin ? (dock.dockState.binFull ? "Full" : "Empty") : ""
             tooltipFont: dock.tooltipFont

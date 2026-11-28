@@ -14,7 +14,7 @@ Boot the generation that includes Spaces. At GDM, select your user, open the gea
 | Maximise or restore | Double-click the title bar. Right-click a decorated title bar for window actions. |
 | Minimise and recover a window | Use its minimise control or title-bar menu. Alt+Tab cycles windows in the Space, including minimised windows. |
 | Switch Space | Click the Space name or the dock picker. Super+1 selects Home and Super+2 selects Ithos Studio. |
-| Move a focused window to another Space | Super+Shift+1 or Super+Shift+2. Its position and process survive a Space switch. |
+| Return to an application | Switch back to its originating Space. Its windows keep their positions during the login. |
 | Leave a Space | Spaces mark → Leave Space. The compositor moves to an empty overview workspace. Choose a Space to return. |
 | Open My Devices | Select Home, then the far-right Sidebar button. The private view is enabled only after the compositor confirms Home. |
 | Return from Tools or the Space picker | Click the strip below the icons or press Escape. |
@@ -23,6 +23,8 @@ Boot the generation that includes Spaces. At GDM, select your user, open the gea
 | Recovery when the shell stops responding | Super+Shift+Escape ends the compositor immediately. Unsaved work can be lost. |
 
 The top bar and dock reserve room for maximised windows. The desktop uses labwc for pointer and keyboard focus, clipboard, drag-and-drop and native client placement. The global menu follows the focused client. Notes exports its application actions. Third-party apps can still use their own menus. Spaces separate live windows during a login. Application relaunch and window positions across logouts depend on the application.
+
+Home also offers conversational dock settings with persistent activity and undo. [Try Arlo](arlo.md).
 
 ## Services and display
 

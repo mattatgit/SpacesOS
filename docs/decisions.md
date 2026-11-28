@@ -18,6 +18,12 @@ The categories below deliberately distinguish product decisions already expresse
 
 **D-007. Global application menus.** Compatible applications export their menus and actions for the focused window. The Spaces system bar presents them. The first implementation uses a GTK client on labwc. [Desktop shell investigation](desktop-shell.md).
 
+**D-008. Space ownership.** Each running application instance and all its windows belong to its originating Space. Each Space can have its own application set. The Tools dock should eventually reflect that set. The interim compositor uses workspaces with shared processes, files and credentials. Spaces removes its window-transfer controls. Stronger isolation, potentially through microVMs, remains future work.
+
+**D-009. Personal resources and agent authority.** Human conversations use the upper-right contextual Sidebar. Arlo has a separate conversation above the dock. An execution service grants explicit capabilities for a resource and initiating context. Personal chats, files and credentials require their own permission before a shared Space or agent can use them. The first capability is Home-initiated control of the personal shell's dock height. Other Space-specific agents remain a product direction.
+
+**D-010. Durable activity and undo.** The shell stores the preference and outcome together. Dismissal leaves tasks running with the original permission. Undo checks the applied revision. A provider adapter and provisional activity panel can evolve independently of these semantics. [Arlo milestone](arlo.md).
+
 ## Proposed technical decisions — pending prototype/review
 
 **P-001:** Use a Wayland-based native shell on NixOS and retain a fallback conventional desktop.

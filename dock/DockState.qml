@@ -4,6 +4,8 @@ import "DockProfiles.js" as DockProfiles
 QtObject {
     id: state
 
+    property var arlo: null
+    readonly property bool arloOpen: !!arlo?.opened && !!arlo?.personal
     property int profile: 64
     property bool binFull: true
     property bool spacesOpen: false
@@ -22,13 +24,18 @@ QtObject {
         if (!DockProfiles.supportsHeight(height))
             return false;
 
+        if (state.arlo) return state.arlo.send("resize", {height}) !== 0;
         state.profile = height;
         return true;
     }
 
     function activate(id: string): void {
         switch (id) {
+        case "bot":
+            if (arlo?.personal) arlo.opened = true;
+            break;
         case "spaces":
+            if (arlo) arlo.opened = false;
             state.spacesOpen = true;
             break;
         case "tools":
