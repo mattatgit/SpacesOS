@@ -38,14 +38,14 @@ profile {
 }
 ```
 
-The real login uses the normal Matrix account, Secret Service and attachment picker. Run `spaces-chat setup` in Console if the account has yet to be paired. A nested session uses a temporary configuration and a separate bus. The encrypted test fixture covers attachments and retry. The physical Mac round trip needs a verified second device in My Devices. Keep LocalSend available during that transition. [Messaging setup and verification](messaging.md).
+The real login uses the normal Matrix account, Secret Service and attachment picker. Run `spaces-chat setup` in Console if the account has yet to be paired. The GNOME launcher uses a persistent test profile and a separate bus. Automated checks can request a disposable profile. The encrypted test fixture covers attachments and retry. The physical Mac round trip needs a verified second device in My Devices. Keep LocalSend available during that transition. [Messaging setup and verification](messaging.md).
 
 ## Install, update and recover
 
 In the host flake, declare the Spaces input, add `spacesos` to the outputs arguments and add `spacesos.nixosModules.session` to the existing machine's modules. Keep the machine's existing GNOME, GDM and boot configuration.
 
 ```nix
-inputs.spacesos.url = "github:mattatgit/SpacesOS/feature/daily-session";
+inputs.spacesos.url = "github:mattatgit/SpacesOS/codex/unified-launch";
 inputs.spacesos.inputs.nixpkgs.follows = "nixpkgs";
 ```
 
@@ -57,6 +57,6 @@ nixos-rebuild build --flake .#nixos
 sudo nixos-rebuild boot --flake .#nixos
 ```
 
-Save your work and restart at a convenient time. A boot-only installation preserves the current login and lets the new GDM process discover both sessions. If the new generation fails to boot, select the previous NixOS generation from the boot menu. If Spaces alone fails, choose GNOME at GDM. Removing the module and its input from the host configuration and building another generation removes Spaces.
+Coordinate staging and the next restart with Matt and SpacesOS Install. A boot-only installation preserves the current login and lets the new GDM process discover both sessions. If the new generation fails to boot, select the previous NixOS generation from the boot menu. If Spaces alone fails, choose GNOME at GDM. Removing the module and its input from the host configuration and building another generation removes Spaces.
 
-For development from a checkout, use `scripts/spaces-session nested`, `scripts/dock test` and `scripts/test-messaging`. For a packaged preview use `nix build .#session` and `./result/bin/spaces-session nested`. Physical password unlock, lid suspend/resume, file drag-and-drop between specific applications, external displays and the first signed-in ChatGPT launch should be checked at the first hardware login.
+For development from a checkout, use `scripts/spaces-session nested`, `scripts/dock test` and `scripts/test-messaging`. For a packaged test desktop use `nix build .#session` and `./result/bin/spaces-session nested`. Physical password unlock, lid suspend/resume, file drag-and-drop between specific applications, external displays and the first signed-in ChatGPT launch should be checked at the first hardware login.

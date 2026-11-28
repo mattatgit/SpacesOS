@@ -9,7 +9,7 @@ case ${1:-} in
     serve)
         if [[ ! -x "$bin" ]]; then
             if [[ ${SPACES_NESTED:-} == 1 ]]; then
-                echo '{"type":"unavailable","message":"My Devices is not set up in this temporary session."}'
+                echo '{"type":"unavailable","message":"My Devices is not set up in this test profile."}'
             else
                 echo '{"type":"unavailable","message":"Run scripts/chat setup in a terminal, then reopen the Sidebar."}'
             fi

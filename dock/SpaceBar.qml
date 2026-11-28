@@ -86,7 +86,11 @@ Rectangle {
                         onObjectRemoved: (index, item) => controlsMenu.removeItem(item)
                     }
                 }
-                MenuItem { text: bar.desktop.independent ? qsTr("End Spaces Session") : qsTr("Quit Spaces"); onTriggered: bar.exitSession() }
+                MenuItem {
+                    text: bar.desktop.loginSession ? qsTr("End Spaces Session")
+                        : bar.desktop.independent ? qsTr("Return to GNOME") : qsTr("Quit Spaces")
+                    onTriggered: bar.exitSession()
+                }
             }
         }
         BarButton {
@@ -121,8 +125,9 @@ Rectangle {
                 id: help
                 Label {
                     padding: 12
-                    text: bar.desktop.independent
-                        ? qsTr("Drag the title bar to move a window.\nDrag a window corner to resize.\nSuper + Shift + Esc ends the session.")
+                    text: bar.desktop.independent && !bar.desktop.loginSession
+                        ? qsTr("Spaces menu → Return to GNOME closes this test desktop.\nDrag a dock divider to resize.")
+                        : bar.desktop.independent ? qsTr("Drag the title bar to move a window.\nDrag a window corner to resize.\nSuper + Shift + Esc ends the session.")
                         : qsTr("F11 toggles fullscreen.\nCtrl + Q quits Spaces.\nDrag a dock divider to resize.")
                 }
             }

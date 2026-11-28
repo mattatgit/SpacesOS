@@ -43,6 +43,7 @@
       in
       pkgs.mkShell {
         SPACES_DOCK_DEVSHELL = "1";
+        SPACES_NESTED_LABWC = "${import ./session/nested-compositor.nix pkgs}/bin/labwc";
         SPACES_POLKIT_AGENT = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
         GI_TYPELIB_PATH = import ./session/typelib-path.nix pkgs;
         SPACES_DOCK_QML_IMPORTS = "${pkgs.qt6.qtdeclarative}/lib/qt-6/qml";

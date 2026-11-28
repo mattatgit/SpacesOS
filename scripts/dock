@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# Older installed desktop entries can still invoke these aliases until refreshed.
+case ${1:-} in launch|fullscreen) exec "$repo/scripts/spaces-session" nested ;; esac
 config="$repo/dock/shell.qml"
 
 if [[ ${SPACES_DOCK_DEVSHELL:-} != 1 ]]; then
@@ -36,7 +38,7 @@ if [[ ${XDG_SESSION_TYPE:-} == wayland && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]
 fi
 
 case "${1:-start}" in
-    start|run|reload|launch|fullscreen)
+    start|run|reload)
         if [[ -z ${SPACES_REDUCED_MOTION+x} && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]] &&
             [[ $(gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true) == false ]]; then
             export SPACES_REDUCED_MOTION=1
@@ -47,14 +49,6 @@ esac
 dock_height='56|6[4-9]|7[0-9]|80'
 
 case "${1:-start}" in
-    launch|fullscreen)
-        # Concurrent launcher activations must attach to the same instance.
-        exec 9>"$XDG_RUNTIME_DIR/spaces-preview-launch.lock"
-        flock 9
-        if ! dock_call status >/dev/null 2>&1; then
-            start_preview 9>&-
-        fi
-        if [[ $1 == fullscreen ]]; then dock_call activate true; else dock_call activate false; fi ;;
     start)
         status=$(dock_call status 2>/dev/null || true)
         if [[ $status == "Main dock · "* || $status == "Spaces dock · "* ]]; then
@@ -127,6 +121,6 @@ case "${1:-start}" in
         echo 'Dock screenshot was not saved. Check that the preview is visible.' >&2
         exit 1 ;;
     *)
-        echo 'Usage: scripts/dock {launch|fullscreen|start|run|stop|reload|status|space|size|bin|spaces|capture|test}' >&2
+        echo 'Usage: scripts/dock {start|run|stop|reload|status|space|size|bin|spaces|capture|test}' >&2
         exit 2 ;;
 esac

@@ -4,13 +4,12 @@ Spaces OS is an experimental, design-led desktop environment and longer-term mul
 
 The project begins with a **native Linux desktop shell** based on the Spaces OS interface designs. Over time it aims to support persistent Spaces, people, applications, collaborative presence, and agent-assisted work.
 
-The native preview runs in Quickshell and Qt Quick. Open the Spaces dock to switch between Home and Ithos Studio, then leave the Space to use the dock over GNOME. [Launch and review Space navigation](docs/native-dock.md).
+There are two ways to open the native desktop.
 
-In Home, click **Arlo** to change the dock height, reopen the activity and undo it. [Arlo v0.1 and its local model](docs/arlo.md).
+- In **GNOME**, click the pinned **Spaces** icon to open or return to the fullscreen test desktop. **Spaces menu → Return to GNOME** closes it. The test profile keeps its own preferences and Arlo history. [Launcher setup and test profiles](docs/desktop-shell.md).
+- At **login**, choose **Spaces OS** from the GDM gear for the real desktop. [Installation and GNOME recovery](docs/daily-session.md).
 
-Choose **Spaces OS** in the GDM session selector after installing the Spaces NixOS module. [Daily-use guide, installation and GNOME recovery](docs/daily-session.md).
-
-Install **Spaces** in the GNOME launcher with `scripts/install-spaces`. Use `scripts/spaces-session nested` to try the independent desktop. [Desktop shell, session and review guide](docs/desktop-shell.md).
+Both run the same native shell. From Home, open **Arlo** to change the dock height, reopen an activity or undo a change. [Arlo and its local model](docs/arlo.md).
 
 Home’s right-hand Sidebar connects to an encrypted Matrix conversation shared with Element on a Mac. [Connect and test My Devices](docs/messaging.md).
 

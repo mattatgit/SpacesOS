@@ -1,0 +1,71 @@
+--- a/src/output.c
++++ b/src/output.c
+@@ -209,12 +209,16 @@
+ 	struct output *output = wl_container_of(listener, output, request_state);
+ 	const struct wlr_output_event_request_state *event = data;
+ 
+-	/*
+-	 * If wlroots ever requests other state changes here we could
+-	 * restore more of ddc9047a67cd53b2948f71fde1bbe9118000dd3f.
+-	 */
+-	if (event->state->committed == WLR_OUTPUT_STATE_MODE) {
+-		/* Only the mode has changed */
++	/* Queue size and scale together. A later host scale event can arrive
++	 * while the previous logical-size frame is still pending. */
++	if (!(event->state->committed & ~(WLR_OUTPUT_STATE_MODE | WLR_OUTPUT_STATE_SCALE))) {
++		if (event->state->committed & WLR_OUTPUT_STATE_SCALE) {
++			wlr_output_state_set_scale(&output->pending, event->state->scale);
++		}
++		if (!(event->state->committed & WLR_OUTPUT_STATE_MODE)) {
++			wlr_output_schedule_frame(output->wlr_output);
++			return;
++		}
+ 		switch (event->state->mode_type) {
+ 		case WLR_OUTPUT_STATE_MODE_FIXED:
+ 			wlr_output_state_set_mode(&output->pending,
+--- a/src/server.c
++++ b/src/server.c
+@@ -119,12 +119,27 @@
+ }
+ 
+ static int
+-handle_sigterm(int signal, void *data)
+-{
+-	struct wl_display *display = data;
+-
++finish_close(void *display)
++{
+ 	wl_display_terminate(display);
+ 	return 0;
++}
++
++static int
++handle_sigterm(int signal, void *data)
++{
++	struct server *server = data;
++
++	/* Give the primary shell a chance to close its Wayland clients before
++	 * disconnecting their display. SIGCHLD completes the normal shutdown. */
++	if (server->primary_client_pid > 0 && kill(server->primary_client_pid, SIGTERM) == 0) {
++		struct wl_event_source *deadline = wl_event_loop_add_timer(
++			server->wl_event_loop, finish_close, server->wl_display);
++		if (deadline && wl_event_source_timer_update(deadline, 1500) == 0) {
++			return 0;
++		}
++	}
++	return finish_close(server->wl_display);
+ }
+ 
+ static int
+@@ -441,9 +456,9 @@
+ 	server->sighup_source = wl_event_loop_add_signal(
+ 		server->wl_event_loop, SIGHUP, handle_sighup, server);
+ 	server->sigint_source = wl_event_loop_add_signal(
+-		server->wl_event_loop, SIGINT, handle_sigterm, server->wl_display);
++		server->wl_event_loop, SIGINT, handle_sigterm, server);
+ 	server->sigterm_source = wl_event_loop_add_signal(
+-		server->wl_event_loop, SIGTERM, handle_sigterm, server->wl_display);
++		server->wl_event_loop, SIGTERM, handle_sigterm, server);
+ 	server->sigchld_source = wl_event_loop_add_signal(
+ 		server->wl_event_loop, SIGCHLD, handle_sigchld, server);
+ 

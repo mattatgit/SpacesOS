@@ -14,6 +14,7 @@ pkgs.runCommand "spaces-wayland-session" {
   patchShebangs $out/lib/spaces/scripts
   makeWrapper $out/lib/spaces/scripts/spaces-session $out/bin/spaces-session \
     --set SPACES_DOCK_DEVSHELL 1 \
+    --set SPACES_NESTED_LABWC "${import ./nested-compositor.nix pkgs}/bin/labwc" \
     --set SPACES_POLKIT_AGENT "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" \
     --prefix PATH : "${pkgs.lib.makeBinPath paths}" \
     --prefix GI_TYPELIB_PATH : "${import ./typelib-path.nix pkgs}"

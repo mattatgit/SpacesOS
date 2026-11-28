@@ -1,47 +1,38 @@
-# Spaces desktop shell
+# Opening the Spaces desktop
 
-The GNOME application and the independent Wayland session share a menu bar, contextual Sidebar, wallpaper, navigation and dock. The independent session uses labwc to manage ordinary applications. The first global menu client is a small native GTK scratchpad called Notes.
+| Where | Open | Leave |
+| --- | --- | --- |
+| GNOME | Click **Spaces** in the dock or Activities. A second click returns to the same fullscreen desktop. | **Spaces menu → Return to GNOME** closes the test desktop and its clients. Applications opened in GNOME keep running. |
+| GDM login screen | Choose **Spaces OS** from the gear, then sign in. | **Spaces menu → End Spaces Session** returns to the login screen after confirmation. |
 
-## Open Spaces on the Framework
+The Spaces menu is the white mark at the upper left. **Leave Space** switches to the Spaces overview. Both paths run the same labwc configuration and native Quickshell desktop, including its menu bar, window management, wallpaper, Sidebar, dock and Arlo.
 
-From this checkout, run the installer once. It installs a per-user desktop entry pointing to this checkout and its approved Spaces icon.
+## GNOME launcher and profile
 
-```sh
-scripts/install-spaces
-```
+From the checkout, run `scripts/install-spaces` to install or refresh the per-user entry. The existing favorite keeps its name, icon and desktop ID, `org.spacesos.Spaces.desktop`. Keep the checkout at this location or rerun the installer after moving it.
 
-Open **Spaces** in GNOME Activities. Right-click its icon to pin it or choose **Open Fullscreen** or **Open Independent Desktop**. Keep this checkout available and rerun the installer if it moves. To remove the launcher, delete `org.spacesos.Spaces.desktop` from `$XDG_DATA_HOME/applications` (normally `~/.local/share/applications`).
+GNOME supplies the fullscreen window size and preferred scale. The hosted compositor renders at the corresponding physical resolution and advertises that scale to its own clients. One nested output follows the host window. GNOME’s normal window switcher also works.
 
-| In the GNOME preview | Result |
-| --- | --- |
-| Reopen Spaces | Reuse its window, restore it from minimization and request activation. GNOME controls foreground placement. |
-| F11 or the Spaces mark → Enter/Leave Fullscreen | Toggle real Wayland fullscreen, including the GNOME top-bar area. |
-| Click the Space name or the dock’s Spaces icon | Open the Space picker. Recents lists visited Spaces. |
-| Spaces mark → Leave Space | Return to the transparent draggable dock. Select a Space to re-enter. |
-| Ctrl+Q or Spaces mark → Quit Spaces | End the application and return to GNOME. |
-| Far-right Sidebar icon | Show or hide the current Space’s Shelf. Home opens My Devices. |
+The test desktop has its own home at `$XDG_STATE_HOME/SpacesOS/nested` (normally `~/.local/state/SpacesOS/nested`). Its config, data, cache and state directories live inside that home. Dock height, navigation, Arlo conversations, drafts and activity survive closing the test desktop. Each run receives a fresh Wayland socket and private D-Bus session. The real login uses the usual user profile, keyring and system controls. Both run as the same Unix user.
 
-Existing development commands include `scripts/dock run`, `start`, `reload`, `stop`, `size`, `space`, `capture` and `test`. The application and developer commands address the same preview instance. [Dock controls](native-dock.md) and [Matrix setup](messaging.md).
-
-## Review the independent desktop
-
-Choose **Open Independent Desktop** from the GNOME launcher, or run the first command below. The second command builds the immutable session package. Executing its wrapper with the argument `nested` runs the packaged version.
+## Developer checks
 
 ```sh
 scripts/spaces-session nested
+scripts/spaces-session nested --disposable
 nix --extra-experimental-features 'nix-command flakes' build .#session
-./result/bin/spaces-session nested
+./result/bin/spaces-session nested --disposable
 ```
 
-1. Click the white Spaces mark and choose **Open Notes**. Its editable window has compositor decorations. Notes is an in-memory test application.
-2. Click **Edit → Insert Timestamp** in the desktop bar. The application inserts the time at the caret and updates its window title.
-3. Choose **Open Icon Browser**. Focus it, then return to Notes by clicking its window or using Alt+Tab. Only Notes exposes the test menu. Both windows retain their own controls.
-4. Drag a title bar, resize from a corner and close a window with its close control. Open the Sidebar, choose a different Space, then reopen the Sidebar to inspect the privacy boundary.
-5. Click **Spaces mark → End Spaces Session** or press **Super+Shift+Escape** inside the nested desktop. **Leave Space** only leaves the wallpaper context. The dock and menu bar remain available.
+The first command uses the same profile as the GNOME icon. Each disposable run has an independent, temporary home and runtime. The standalone dock remains a [developer harness for component tests and design captures](native-dock.md).
 
-The preview is a single GNOME-managed window. The independent host has four Wayland surfaces on the compositor’s default output. The wallpaper occupies the background layer, the bar reserves 48 logical pixels, the bottom dock has an input mask matching its controls, and the right Sidebar takes keyboard focus on demand. A private session bus, runtime directory, Wayland socket, and temporary XDG configuration, data and cache keep nested launches separate. The nested Files button opens its temporary data directory. Accounts in the enclosing desktop stay in that session.
+To check a release, launch the pinned icon, resize the dock through Arlo, and open the icon again. Use **Return to GNOME**, reopen Spaces, and check the saved height and activity. In the real login, check the same shell interactions against its own profile. Coordinate the host update and physical login with Matt and SpacesOS Install. [Login and recovery](daily-session.md).
 
-labwc’s session command owns the foreground shell. Closing either ends the nested desktop. The launcher cleans its temporary directory on exit. Window management remains the compositor’s responsibility. The daily-use build maps Home and Ithos Studio to real compositor workspaces.
+The packaged launcher regression uses a headless Wayland parent at 150% scale. Run it from the checkout after building `result`.
+
+```sh
+nix --extra-experimental-features 'nix-command flakes' shell --inputs-from . nixpkgs#sway nixpkgs#wayland-utils nixpkgs#python3 nixpkgs#dbus --command dbus-run-session -- python3 session/test_nested.py ./result
+```
 
 ## Sidebar and visual comparison
 
@@ -60,9 +51,9 @@ For a 1:1 comparison, inspect the reference and the running shell at 100% logica
 | Nested session and layers | Ran KWin standalone inside GNOME. The client protocol probe advertised layer-shell. | Ran the full Quickshell desktop inside GNOME and exercised all four layer surfaces. |
 | Floating windows and focus | KWin’s scripting API exposes window activation, geometry and virtual desktops. A dedicated focus adapter would be needed here. | Tested native GTK window creation, pointer focus, title-bar movement, border resizing, closing and switching between two clients. |
 | Global menus | The probe advertised KDE AppMenu. It can associate a client surface with a D-BusMenu service and object path. The wlroots foreign-toplevel focus protocol was absent from the probe. | Quickshell receives focus through the advertised wlroots foreign-toplevel protocol. A session-local GIO adapter reads the opted-in Notes menu and dispatches enabled actions to its unique bus owner. |
-| Effects and scaling | The probe advertised KWin blur. Rendering a blurred third-party window and multi-output behavior need testing. | The prototype renders wallpaper blur and alpha. One 1280 × 720 logical nested output was tested. Mixed-DPI/monitor hotplug and the custom blur path need a separate pass. |
+| Effects and scaling | The probe advertised KWin blur. Rendering a blurred third-party window and multi-output behavior need testing. | The prototype renders wallpaper blur and alpha. The GNOME launcher follows the host window’s logical size and fractional scale. Mixed-DPI/monitor hotplug and the custom blur path need a separate pass. |
 | Spaces integration | An adapter could map a Space to a KWin virtual desktop and observe window moves. | Desktop and window rules are possible integration points. Application instances and their windows belong to the originating Space. Current workspaces provide visual separation. |
-| Operating cost | Stronger built-in effects and KDE integration, with more integration work for this shell. | Directly supplies the focus and capture protocols used here. No separate desktop shell or compositor fork is required. |
+| Operating cost | Stronger built-in effects and KDE integration, with more integration work for this shell. | Directly supplies the focus and capture protocols used here. The physical session uses stock labwc. The nested build adapts its Wayland output for the host window. |
 
 GTK’s `GMenuModel` supplies the live model; `GActionGroup` supplies the actions and their enabled state. The adapter renders the opted-in application’s top-level menus and ordinary, parameterless application actions. Unsupported clients remain usable. Qt applications can instead export the Canonical D-BusMenu layout/events interface through a suitable platform integration. KDE’s protocol supplies per-window discovery of that endpoint. Supporting that format, nested submenus, parameterized actions and window-scoped GTK actions would extend this first adapter. [GTK menu exporter](https://docs.gtk.org/gio/menu-exporter.html), [KDE AppMenu protocol](https://github.com/KDE/plasma-wayland-protocols/blob/master/src/protocols/appmenu.xml), [KWin scripting API](https://develop.kde.org/docs/plasma/kwin/api/), [labwc](https://labwc.github.io/).
 
@@ -72,15 +63,11 @@ The daily-use build extends this milestone with a selectable GDM session, an ins
 
 ## Validation and review decisions
 
-On the Framework the Qt Quick suite passed 22 checks covering the dock, navigation and contextual Sidebar. The lifetime regression holds a pending operation through hiding, then checks retention of a draft and retry state. Both existing service integration tests passed. To repeat the checks, run the commands below.
+The Qt Quick suite covers the dock, navigation and contextual Sidebar. The lifetime regression holds a pending operation through hiding, then checks retention of a draft and retry state. Both existing service integration tests passed. To repeat the checks, run the commands below.
 
 ```sh
 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software scripts/dock test
 scripts/test-messaging
 ```
 
-The installed launcher reused one process on repeated launch. A native fullscreen capture measured 2880 × 1920 on the Framework. F11 restored the previous window. The native Notes action changed both the editable document and the title; the independent desktop was also closed with a native app open. The physical cross-device acceptance test remains outstanding.
-
 Architecture & Design should review the focused-app identity beside the Space name, the direct Home conversation versus a future overview, the empty shared Shelf, and the materials over real client windows. The labwc experiment establishes a working baseline; choosing a production compositor, multi-output policy and window-to-Space ownership remain separate decisions.
-
-The review branch descends from messaging commit `0778561` and targets `main`. It carries the history of PRs #3, #4 and #5. Review the desktop milestone against `0778561`, then merge one consolidated baseline after acceptance. The existing reviews can be closed as superseded after that merge.
