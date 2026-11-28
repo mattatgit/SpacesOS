@@ -1,4 +1,6 @@
-# Native Space navigation preview
+# Standalone dock developer harness
+
+This harness supports isolated component checks and Figma comparisons. For everyday use, open **Spaces** in GNOME or choose **Spaces OS** at login. [Desktop launch guide](desktop-shell.md).
 
 The pinned Nix development shell supplies Quickshell, Qt Quick with SVG support, Qt Test, and Wayland inspection tools. Run these commands from the repository root on the Framework. The launcher enters the pinned shell automatically. An interactive development shell is available with `nix --extra-experimental-features 'nix-command flakes' develop`.
 

@@ -12,20 +12,12 @@ cat > "$entry" <<ENTRY
 Type=Application
 Name=Spaces
 Comment=Open the Spaces desktop
-Exec="$launcher/dock" launch
+Exec="$launcher/spaces-session" nested
 Icon=$repo/dock/assets/spaces.png
 StartupWMClass=org.spacesos.Spaces
 Categories=Utility;
 Terminal=false
-Actions=Fullscreen;Independent;
-
-[Desktop Action Fullscreen]
-Name=Open Fullscreen
-Exec="$launcher/dock" fullscreen
-
-[Desktop Action Independent]
-Name=Open Independent Desktop
-Exec="$launcher/spaces-session" nested
+StartupNotify=true
 ENTRY
 chmod 644 "$entry"
 mv -fT "$entry" "$apps/org.spacesos.Spaces.desktop"

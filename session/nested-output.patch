@@ -1,0 +1,316 @@
+--- a/backend/wayland/backend.c
++++ b/backend/wayland/backend.c
+@@ -29,6 +29,7 @@
+ #include "xdg-shell-client-protocol.h"
+ #include "tablet-v2-client-protocol.h"
+ #include "relative-pointer-unstable-v1-client-protocol.h"
++#include "fractional-scale-v1-client-protocol.h"
+ #include "viewporter-client-protocol.h"
+ 
+ struct wlr_wl_linux_dmabuf_feedback_v1 {
+@@ -409,6 +410,9 @@
+ 	} else if (strcmp(iface, wl_subcompositor_interface.name) == 0) {
+ 		wl->subcompositor = wl_registry_bind(registry, name,
+ 			&wl_subcompositor_interface, 1);
++	} else if (strcmp(iface, wp_fractional_scale_manager_v1_interface.name) == 0) {
++		wl->scale_manager = wl_registry_bind(registry, name,
++			&wp_fractional_scale_manager_v1_interface, 1);
+ 	} else if (strcmp(iface, wp_viewporter_interface.name) == 0) {
+ 		wl->viewporter = wl_registry_bind(registry, name,
+ 			&wp_viewporter_interface, 1);
+@@ -545,6 +549,9 @@
+ 	}
+ 	if (wl->subcompositor) {
+ 		wl_subcompositor_destroy(wl->subcompositor);
++	}
++	if (wl->scale_manager) {
++		wp_fractional_scale_manager_v1_destroy(wl->scale_manager);
+ 	}
+ 	if (wl->viewporter) {
+ 		wp_viewporter_destroy(wl->viewporter);
+--- a/backend/wayland/meson.build
++++ b/backend/wayland/meson.build
+@@ -13,6 +13,7 @@
+ 
+ client_protos = [
+ 	'drm',
++	'fractional-scale-v1',
+ 	'linux-dmabuf-v1',
+ 	'linux-drm-syncobj-v1',
+ 	'pointer-gestures-unstable-v1',
+--- a/backend/wayland/output.c
++++ b/backend/wayland/output.c
+@@ -1,4 +1,8 @@
+ #include <assert.h>
++#include <fcntl.h>
++#include <math.h>
++#include <signal.h>
++#include <sys/socket.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -23,6 +27,7 @@
+ #include "linux-dmabuf-v1-client-protocol.h"
+ #include "linux-drm-syncobj-v1-client-protocol.h"
+ #include "presentation-time-client-protocol.h"
++#include "fractional-scale-v1-client-protocol.h"
+ #include "viewporter-client-protocol.h"
+ #include "xdg-activation-v1-client-protocol.h"
+ #include "xdg-decoration-unstable-v1-client-protocol.h"
+@@ -495,7 +500,7 @@
+ 	if (state->committed & WLR_OUTPUT_STATE_LAYERS) {
+ 		// If we can't use a sub-surface for a layer, then we can't use a
+ 		// sub-surface for any layer underneath
+-		bool supported = output->backend->subcompositor != NULL;
++		bool supported = output->backend->subcompositor != NULL && output->host_scale == 1;
+ 		for (ssize_t i = state->layers_len - 1; i >= 0; i--) {
+ 			struct wlr_output_layer_state *layer_state = &state->layers[i];
+ 			if (layer_state->buffer != NULL) {
+@@ -751,8 +756,10 @@
+ 		output->has_configure_serial = false;
+ 		output->requested_width = output->requested_height = 0;
+ 	} else if (output->own_surface && pending_enabled && !output->initialized) {
+-		xdg_toplevel_set_title(output->xdg_toplevel, output->title);
+-		xdg_toplevel_set_app_id(output->xdg_toplevel, output->app_id);
++		xdg_toplevel_set_title(output->xdg_toplevel, output->activation_source ? "Spaces" : "Spaces Test");
++		xdg_toplevel_set_app_id(output->xdg_toplevel,
++			output->activation_source ? "org.spacesos.Spaces" : "org.spacesos.Test");
++		xdg_toplevel_set_fullscreen(output->xdg_toplevel, NULL);
+ 		wl_surface_commit(output->surface);
+ 		output->initialized = true;
+ 
+@@ -790,6 +797,9 @@
+ 			return false;
+ 		}
+ 
++		if (output->viewport && output->logical_width && output->logical_height) {
++			wp_viewport_set_destination(output->viewport, output->logical_width, output->logical_height);
++		}
+ 		wl_surface_attach(output->surface, buffer->wl_buffer, 0, 0);
+ 		damage_surface(output->surface, damage);
+ 	}
+@@ -908,6 +918,10 @@
+ 	struct wlr_wl_output *output = get_wl_output_from_output(wlr_output);
+ 	struct wlr_wl_backend *backend = output->backend;
+ 
++	// The composited cursor shares the framebuffer's fractional transform.
++	if (wlr_buffer && output->host_scale != 1) {
++		return false;
++	}
+ 	output->cursor.hotspot_x = hotspot_x;
+ 	output->cursor.hotspot_y = hotspot_y;
+ 
+@@ -978,6 +992,15 @@
+ 
+ 	if (output->drm_syncobj_surface_v1) {
+ 		wp_linux_drm_syncobj_surface_v1_destroy(output->drm_syncobj_surface_v1);
++	}
++	if (output->activation_source) {
++		wl_event_source_remove(output->activation_source);
++	}
++	if (output->fractional_scale) {
++		wp_fractional_scale_v1_destroy(output->fractional_scale);
++	}
++	if (output->viewport) {
++		wp_viewport_destroy(output->viewport);
+ 	}
+ 	if (output->zxdg_toplevel_decoration_v1) {
+ 		zxdg_toplevel_decoration_v1_destroy(output->zxdg_toplevel_decoration_v1);
+@@ -1031,20 +1054,55 @@
+ 	return wlr_output->impl == &output_impl;
+ }
+ 
++static void request_host_mode(struct wlr_wl_output *output) {
++	if (!output->wlr_output.enabled || !output->logical_width || !output->logical_height) {
++		return;
++	}
++	int width = lround(output->logical_width * output->host_scale);
++	int height = lround(output->logical_height * output->host_scale);
++	if (width == output->wlr_output.width && height == output->wlr_output.height
++			&& output->wlr_output.scale == (float)output->host_scale) {
++		return;
++	}
++	struct wlr_output_state state;
++	wlr_output_state_init(&state);
++	wlr_output_state_set_custom_mode(&state, width, height, 0);
++	wlr_output_state_set_scale(&state, output->host_scale);
++	wlr_output_send_request_state(&output->wlr_output, &state);
++	wlr_output_state_finish(&state);
++}
++
++static void preferred_scale(void *data, struct wp_fractional_scale_v1 *fractional, uint32_t scale) {
++	struct wlr_wl_output *output = data;
++	output->host_scale = scale / 120.0;
++	request_host_mode(output);
++}
++
++static const struct wp_fractional_scale_v1_listener scale_listener = {
++	.preferred_scale = preferred_scale,
++};
++
++static int handle_activation(int fd, uint32_t mask, void *data) {
++	struct wlr_wl_output *output = data;
++	char token[4096];
++	ssize_t size = recv(fd, token, sizeof(token) - 1, MSG_DONTWAIT);
++	if (size > 0 && output->backend->activation_v1) {
++		token[size] = 0;
++		xdg_activation_v1_activate(output->backend->activation_v1, token, output->surface);
++		wl_display_flush(output->backend->remote_display);
++	}
++	return 0;
++}
++
+ static void xdg_surface_handle_configure(void *data,
+ 		struct xdg_surface *xdg_surface, uint32_t serial) {
+ 	struct wlr_wl_output *output = data;
+ 	assert(output && output->xdg_surface == xdg_surface);
+ 
+-	int32_t req_width = output->wlr_output.width;
+-	int32_t req_height = output->wlr_output.height;
+-	if (output->requested_width > 0) {
+-		req_width = output->requested_width;
+-		output->requested_width = 0;
+-	}
+-	if (output->requested_height > 0) {
+-		req_height = output->requested_height;
+-		output->requested_height = 0;
++	if (output->requested_width && output->requested_height) {
++		output->logical_width = output->requested_width;
++		output->logical_height = output->requested_height;
++		output->requested_width = output->requested_height = 0;
+ 	}
+ 
+ 	if (output->unmap_callback != NULL) {
+@@ -1055,17 +1113,7 @@
+ 	output->has_configure_serial = true;
+ 	output->configure_serial = serial;
+ 
+-	if (!output->wlr_output.enabled) {
+-		// We're waiting for a configure event after an initial commit to enable
+-		// the output. Do not notify the compositor about the requested state.
+-		return;
+-	}
+-
+-	struct wlr_output_state state;
+-	wlr_output_state_init(&state);
+-	wlr_output_state_set_custom_mode(&state, req_width, req_height, 0);
+-	wlr_output_send_request_state(&output->wlr_output, &state);
+-	wlr_output_state_finish(&state);
++	request_host_mode(output);
+ }
+ 
+ static const struct xdg_surface_listener xdg_surface_listener = {
+@@ -1091,7 +1139,8 @@
+ 	struct wlr_wl_output *output = data;
+ 	assert(output && output->xdg_toplevel == xdg_toplevel);
+ 
+-	wlr_output_destroy(&output->wlr_output);
++	// This window is the whole nested desktop. Close its session command too.
++	raise(SIGTERM);
+ }
+ 
+ static const struct xdg_toplevel_listener xdg_toplevel_listener = {
+@@ -1174,6 +1223,33 @@
+ 	}
+ 
+ 	output->own_surface = true;
++	output->host_scale = 1;
++	if (backend->viewporter) {
++		output->viewport = wp_viewporter_get_viewport(backend->viewporter, surface);
++	}
++	if (output->viewport && backend->scale_manager) {
++		output->fractional_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
++			backend->scale_manager, surface);
++		wp_fractional_scale_v1_add_listener(output->fractional_scale, &scale_listener, output);
++	}
++	const char *activation_fd = getenv("SPACES_ACTIVATION_FD");
++	if (activation_fd) {
++		int fd = atoi(activation_fd);
++		const char *lock_fd = getenv("SPACES_PROFILE_LOCK_FD");
++		if (!lock_fd || atoi(lock_fd) < 3 || fcntl(atoi(lock_fd), F_SETFD, FD_CLOEXEC) < 0) {
++			goto error;
++		}
++		unsetenv("SPACES_PROFILE_LOCK_FD");
++		unsetenv("SPACES_ACTIVATION_FD");
++		if (fd < 3 || fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
++			goto error;
++		}
++		output->activation_source = wl_event_loop_add_fd(backend->event_loop, fd,
++			WL_EVENT_READABLE, handle_activation, output);
++		if (!output->activation_source) {
++			goto error;
++		}
++	}
+ 
+ 	output->xdg_surface =
+ 		xdg_wm_base_get_xdg_surface(backend->xdg_wm_base, output->surface);
+@@ -1218,6 +1294,8 @@
+ 	wl_display_flush(backend->remote_display);
+ 
+ 	output_start(output);
++	// labwc has now enabled the output. Apply the size from the initial configure.
++	request_host_mode(output);
+ 
+ 	// TODO: let the compositor do this bit
+ 	if (backend->activation_v1 && backend->activation_token) {
+--- a/backend/wayland/pointer.c
++++ b/backend/wayland/pointer.c
+@@ -92,8 +92,8 @@
+ 	struct wlr_pointer_motion_absolute_event event = {
+ 		.pointer = &pointer->wlr_pointer,
+ 		.time_msec = time,
+-		.x = wl_fixed_to_double(sx) / wlr_output->width,
+-		.y = wl_fixed_to_double(sy) / wlr_output->height,
++		.x = wl_fixed_to_double(sx) / (pointer->output->logical_width > 0 ? pointer->output->logical_width : wlr_output->width),
++		.y = wl_fixed_to_double(sy) / (pointer->output->logical_height > 0 ? pointer->output->logical_height : wlr_output->height),
+ 	};
+ 	wl_signal_emit_mutable(&pointer->wlr_pointer.events.motion_absolute, &event);
+ }
+--- a/backend/wayland/seat.c
++++ b/backend/wayland/seat.c
+@@ -121,8 +121,8 @@
+ 	 */
+ 	struct wlr_wl_output *output, *tmp;
+ 	wl_list_for_each_safe(output, tmp, &seat->backend->outputs, link) {
+-		*sx = wl_fixed_to_double(x) / output->wlr_output.width;
+-		*sy = wl_fixed_to_double(y) / output->wlr_output.height;
++		*sx = wl_fixed_to_double(x) / (output->logical_width > 0 ? output->logical_width : output->wlr_output.width);
++		*sy = wl_fixed_to_double(y) / (output->logical_height > 0 ? output->logical_height : output->wlr_output.height);
+ 		return; // Choose the first output in the list
+ 	}
+ 
+--- a/backend/wayland/tablet_v2.c
++++ b/backend/wayland/tablet_v2.c
+@@ -534,8 +534,8 @@
+ 	struct wlr_wl_output *output = tool->output;
+ 	assert(output);
+ 
+-	tool->x = wl_fixed_to_double(x) / output->wlr_output.width;
+-	tool->y = wl_fixed_to_double(y) / output->wlr_output.height;
++	tool->x = wl_fixed_to_double(x) / (output->logical_width > 0 ? output->logical_width : output->wlr_output.width);
++	tool->y = wl_fixed_to_double(y) / (output->logical_height > 0 ? output->logical_height : output->wlr_output.height);
+ }
+ 
+ static void handle_tablet_tool_pressure(void *data,
+--- a/include/backend/wayland.h
++++ b/include/backend/wayland.h
+@@ -53,6 +53,7 @@
+ 	struct xdg_activation_v1 *activation_v1;
+ 	struct wl_subcompositor *subcompositor;
+ 	struct wp_viewporter *viewporter;
++	struct wp_fractional_scale_manager_v1 *scale_manager;
+ 	char *drm_render_name;
+ };
+ 
+@@ -101,6 +102,11 @@
+ 
+ 	struct wl_surface *surface;
+ 	bool own_surface;
++	struct wp_viewport *viewport;
++	struct wp_fractional_scale_v1 *fractional_scale;
++	double host_scale;
++	int32_t logical_width, logical_height;
++	struct wl_event_source *activation_source;
+ 	struct wl_callback *frame_callback;
+ 	struct xdg_surface *xdg_surface;
+ 	struct xdg_toplevel *xdg_toplevel;

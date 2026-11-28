@@ -2,39 +2,25 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 mode=${1:-nested}
-case "$mode" in nested|login) ;; *) echo "Usage: scripts/spaces-session [nested|login]" >&2; exit 2 ;; esac
+if (( $# )); then shift; fi
+case "$mode:$*" in
+    nested:|nested:--disposable|login:) ;;
+    *) echo 'Usage: spaces-session {nested [--disposable]|login}' >&2; exit 2 ;;
+esac
 if [[ ${SPACES_DOCK_DEVSHELL:-} != 1 ]]; then
-    exec nix --extra-experimental-features 'nix-command flakes' develop "path:$repo" --command "$repo/scripts/spaces-session" "$mode"
+    exec nix --extra-experimental-features 'nix-command flakes' develop "path:$repo" --command "$repo/scripts/spaces-session" "$mode" "$@"
 fi
-# labwc passes -S to a command parser. Keep the path in the environment, outside the command string.
-export SPACES_SESSION_QML="$repo/dock/session.qml"
-export SPACES_SESSION_MODE="$mode"
-export NIXOS_OZONE_WL=1
-export XDG_CURRENT_DESKTOP=Spaces XDG_SESSION_DESKTOP=Spaces XDG_SESSION_TYPE=wayland QT_QPA_PLATFORM=wayland
-export GDK_BACKEND=wayland
-unset DISPLAY SWAYSOCK I3SOCK XDG_ACTIVATION_TOKEN DESKTOP_STARTUP_ID
+if [[ $mode == nested && -z ${SPACES_REDUCED_MOTION+x} && ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]] &&
+        [[ $(gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true) == false ]]; then
+    export SPACES_REDUCED_MOTION=1
+fi
+# Both entry points run the same shell and session configuration.
+export SPACES_SESSION_QML="$repo/dock/session.qml" SPACES_SESSION_MODE="$mode"
+export NIXOS_OZONE_WL=1 XDG_CURRENT_DESKTOP=Spaces XDG_SESSION_DESKTOP=Spaces
+export XDG_SESSION_TYPE=wayland QT_QPA_PLATFORM=wayland GDK_BACKEND=wayland
 export PATH="$repo/scripts:$PATH"
-client=spaces-shell-client
-if [[ $mode == login ]]; then
-    unset WAYLAND_DISPLAY WLR_BACKENDS
-    exec labwc -C "$repo/session" -S "$client"
+if [[ $mode == nested ]]; then
+    exec python3 -B "$repo/session/nested.py" "$@"
 fi
-parent=${WAYLAND_DISPLAY:?A running Wayland desktop is required for nested mode}
-[[ $parent == /* ]] || parent="$XDG_RUNTIME_DIR/$parent"
-[[ -S $parent ]] || { echo "Parent Wayland display unavailable" >&2; exit 1; }
-scratch=$(mktemp -d "/tmp/spaces-session.XXXXXXXX")
-trap 'rm -rf --one-file-system -- "$scratch"' EXIT
-export XDG_RUNTIME_DIR="$scratch/run" XDG_CONFIG_HOME="$scratch/config" XDG_DATA_HOME="$scratch/data"
-export XDG_CACHE_HOME="$scratch/cache" XDG_STATE_HOME="$scratch/state"
-mkdir -m 700 "$XDG_RUNTIME_DIR" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
-export WLR_BACKENDS=wayland WLR_WL_OUTPUTS=1 LABWC_UPDATE_ACTIVATION_ENV=0 SPACES_NESTED=1
-unset WAYLAND_DISPLAY GNOME_KEYRING_CONTROL SSH_AUTH_SOCK
-unset DBUS_SESSION_BUS_ADDRESS DBUS_STARTER_ADDRESS DBUS_STARTER_BUS_TYPE
-setsid dbus-run-session -- env WAYLAND_DISPLAY="$parent" labwc -C "$repo/session" -S "$client" &
-session_pid=$!
-trap 'kill -TERM -- "-$session_pid" 2>/dev/null || true' HUP INT TERM
-result=0
-wait "$session_pid" || result=$?
-# A trapped signal interrupts wait before the session has necessarily closed.
-if kill -0 "$session_pid" 2>/dev/null; then wait "$session_pid" || true; fi
-exit "$result"
+unset DISPLAY WAYLAND_DISPLAY WLR_BACKENDS SWAYSOCK I3SOCK XDG_ACTIVATION_TOKEN DESKTOP_STARTUP_ID SPACES_NESTED
+exec labwc -C "$repo/session" -S spaces-shell-client

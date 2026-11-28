@@ -14,7 +14,7 @@ Arlo operates from Home. Dock height belongs to the personal shell and applies a
 
 The shell launches a private standard-input/output service. It supplies the confirmed context on this channel, separately from the model's output. The Python service validates operations and parameters, records the initiating context and resource, and compares preference revisions before committing. The read, resize and undo operations are the entire model interface. The worker receives a bounded conversation excerpt and current height. It has no tools, shell commands, filesystem API or Matrix access.
 
-A SQLite transaction commits the preference and activity result together. A shell restart recovers completed records, conversations, drafts and height. Pending work from an exited process becomes **Interrupted** and requires an explicit retry. A cancellation committed before the result prevents a late model response from applying anything. The service uses the user's private state directory at `$XDG_STATE_HOME/SpacesOS/arlo` (normally `~/.local/state/SpacesOS/arlo`). The current nested launcher creates its own temporary XDG directories and discards them when that entire test session ends.
+A SQLite transaction commits the preference and activity result together. A shell restart recovers completed records, conversations, drafts and height. Pending work from an exited process becomes **Interrupted** and requires an explicit retry. A cancellation committed before the result prevents a late model response from applying anything. The service uses the user's private state directory at `$XDG_STATE_HOME/SpacesOS/arlo` (normally `~/.local/state/SpacesOS/arlo`). GNOME stores the test desktop’s corresponding files under its persistent test home. The developer option `nested --disposable` uses a temporary home. [Test profiles](desktop-shell.md).
 
 Workspaces share a Unix user, filesystem and credentials today. Home-only controls and service validation establish the feature's permission boundary within the trusted shell. Protection against another process running as the same user requires stronger isolation.
 
@@ -35,7 +35,7 @@ nix --extra-experimental-features 'nix-command flakes' build .#session
 ./result/bin/spaces-session nested
 ```
 
-For SpacesOS Install, point the existing host's SpacesOS input at `github:mattatgit/SpacesOS/codex/arlo-v0-1`, retain its nixpkgs follow, and update just that input. From the host configuration directory:
+For SpacesOS Install, point the existing host's SpacesOS input at `github:mattatgit/SpacesOS/codex/unified-launch`, retain its nixpkgs follow, and update just that input. From the host configuration directory:
 
 ```sh
 nix --extra-experimental-features 'nix-command flakes' flake update spacesos
